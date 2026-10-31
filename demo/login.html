@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prihlásenie – GSC Fetch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a1020;--panel:#111a2e;--panel-2:#16213a;--border:#22304f;--text:#e6ebf5;--muted:#8a97b4;--accent:#3b82f6;--accent-2:#60a5fa;--err:#f87171;--warn:#fcd34d}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--text);font:15px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    background:var(--bg) radial-gradient(1200px 500px at 0% -10%,#1b2b55 0%,transparent 60%) no-repeat;display:flex;flex-direction:column}
+  a{color:var(--accent-2);text-decoration:none}
+  .top{display:flex;align-items:center;gap:10px;padding:18px 24px;font-weight:600}
+  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#1e40af);display:grid;place-items:center;font-weight:700;color:#fff}
+  .top a.back{margin-left:auto;font-weight:400;font-size:14px;color:var(--muted)}
+  main{flex:1;display:grid;place-items:center;padding:20px}
+  .card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:26px}
+  h1{font-size:24px;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .chip{display:inline-block;padding:2px 10px;border-radius:999px;background:rgba(59,130,246,.14);color:var(--accent-2);font-size:13px}
+  .note{display:flex;gap:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:6px}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.6px}
+  input{width:100%;height:44px;padding:0 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font:inherit;outline:none}
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+  .g-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;height:48px;margin-top:18px;border-radius:12px;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+  .g-btn:hover{background:#2563eb}
+  .g{width:22px;height:22px;border-radius:50%;background:#fff;color:#2563eb;display:grid;place-items:center;font-weight:700;font-size:13px}
+  .err{color:var(--err);font-size:13px;min-height:20px;margin-top:10px}
+  .alt{margin-top:16px;font-size:14px;color:var(--muted);text-align:center}
+  .reset{display:block;margin-top:14px;text-align:center;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="top"><span class="logo">G</span>GSC Fetch<a class="back" href="../index.html">← Späť na stránku</a></div>
+<main>
+  <form class="card" id="form" novalidate>
+    <h1 id="title">Prihlás sa</h1>
+    <p class="sub" id="sub"></p>
+    <div class="note"><span>⚠</span><span>Lokálne demo. V ostrej verzii sa tu otvorí prihlásenie Google účtom. Teraz zadaj ľubovoľné meno a e-mail.</span></div>
+    <label for="name">Meno</label>
+    <input id="name" autocomplete="name" placeholder="Ján Novák">
+    <label for="email">E-mail Google účtu</label>
+    <input id="email" type="email" autocomplete="email" placeholder="meno@firma.sk">
+    <div class="err" id="err"></div>
+    <button class="g-btn" type="submit"><span class="g">G</span><span id="cta">Pokračovať cez Google</span></button>
+    <div class="alt" id="alt"></div>
+    <a class="reset" href="#" id="reset">Resetovať demo (vymaže účty a predplatné v tomto prehliadači)</a>
+  </form>
+</main>
+<script src="mock-gas.js"></script>
+<script>
+var q = new URLSearchParams(location.search);
+// "Prepnúť účet" / odstránenie účtu v aplikácii vedie sem s ?logout=1.
+if (q.get('logout') === '1') GSC_DEMO.logout();
+var signup = q.get('mode') === 'signup';
+var plan = q.get('plan');
+var PLAN_NAMES = { starter: 'Starter', pro: 'Pro' };
+document.getElementById('title').textContent = signup ? 'Vytvor si účet' : 'Prihlás sa';
+var sub = document.getElementById('sub');
+sub.textContent = signup ? 'Účet vznikne pri prvom prihlásení cez Google.' : 'Pokračuj Google účtom, ktorým máš prístup do Search Console.';
+if (plan && PLAN_NAMES[plan]) {
+  sub.appendChild(document.createElement('br'));
+  sub.appendChild(document.createTextNode('Vybraný plán: '));
+  var chip = document.createElement('span');
+  chip.className = 'chip';
+  var periodName = { yearly: ' · ročne', lifetime: ' Lifetime' }[q.get('period')] || ' · mesačne';
+  chip.textContent = PLAN_NAMES[plan] + periodName;
+  sub.appendChild(chip);
+}
+var alt = document.getElementById('alt');
+var other = new URLSearchParams(q);
+other.set('mode', signup ? 'login' : 'signup');
+alt.innerHTML = signup ? 'Už máš účet? <a id="alt-link">Prihlás sa</a>' : 'Nemáš účet? <a id="alt-link">Zaregistruj sa</a>';
+document.getElementById('alt-link').href = 'login.html?' + other.toString();
+
+var err = document.getElementById('err');
+document.querySelectorAll('input').forEach(function (i) { i.oninput = function () { err.textContent = ''; }; });
+document.getElementById('form').onsubmit = function (e) {
+  e.preventDefault();
+  var name = document.getElementById('name').value.trim();
+  var email = document.getElementById('email').value.trim();
+  if (name.length < 2) { err.textContent = 'Zadaj meno.'; return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Zadaj platný e-mail.'; return; }
+  GSC_DEMO.login(name, email);
+  var next = new URLSearchParams();
+  if (plan && PLAN_NAMES[plan]) {
+    next.set('plan', plan);
+    next.set('period', ['yearly', 'lifetime'].indexOf(q.get('period')) >= 0 ? q.get('period') : 'monthly');
+  }
+  location.href = 'app.html' + (next.toString() ? '?' + next.toString() : '');
+};
+document.getElementById('reset').onclick = function (e) {
+  e.preventDefault();
+  if (confirm('Vymazať všetky demo účty a predplatné v tomto prehliadači?')) { GSC_DEMO.reset(); location.reload(); }
+};
+</script>
+</body>
+</html>

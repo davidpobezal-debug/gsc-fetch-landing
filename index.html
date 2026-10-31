@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GSC Fetch – Automated GSC reports and SEO audits in Google Sheets</title>
+<meta name="description" content="Automated monthly Google Search Console reports and fast SEO audits right in Google Sheets. Export up to 50,000 rows instead of the 1,000-row limit, find cannibalization, audit URLs and sitemaps.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Measurement: paste the Plausible (or Umami) script here, e.g.
+<script defer data-domain="yourdomain.com" src="https://plausible.io/js/script.js"></script>
+Clicks are reported through track() below as custom events. -->
+<style>
+  :root{
+    --bg:#0a1020; --panel:#111a2e; --panel-2:#16213a; --border:#22304f;
+    --text:#e6ebf5; --muted:#8a97b4; --accent:#3b82f6; --accent-2:#60a5fa;
+    --ok:#22c55e; --err:#f87171; --warn:#fcd34d;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;min-height:100vh;color:var(--text);font:15px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    background:var(--bg) radial-gradient(1200px 600px at 0% -10%,#1b2b55 0%,transparent 60%) no-repeat}
+  a{color:var(--accent-2);text-decoration:none}
+  .container{max-width:1120px;margin:0 auto;padding:0 20px}
+  .hidden{display:none !important}
+
+  nav.top{position:sticky;top:0;z-index:20;background:rgba(10,16,32,.85);backdrop-filter:blur(10px);border-bottom:1px solid rgba(34,48,79,.7)}
+  nav.top .container{display:flex;align-items:center;gap:24px;height:64px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--text);white-space:nowrap}
+  .logo{flex:none;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#1e40af);display:grid;place-items:center;font-weight:700;color:#fff;box-shadow:0 6px 18px rgba(59,130,246,.35)}
+  .nav-links{display:flex;gap:22px;margin-left:12px}
+  .nav-links a{color:var(--muted);font-size:14px}
+  .nav-links a:hover{color:var(--text)}
+  .nav-right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  @media (max-width:760px){.nav-links{display:none}}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:var(--accent-2)}
+  .primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .primary:hover{background:#2563eb;border-color:#2563eb}
+  .ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .ghost:hover{color:var(--text);border-color:var(--border)}
+  .lg{height:48px;padding:0 22px;font-size:15px;border-radius:12px}
+  .full{width:100%}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px}
+
+  .hero{padding:80px 0 50px;display:grid;grid-template-columns:1fr 1.12fr;gap:40px;align-items:center}
+  @media (max-width:900px){.hero{grid-template-columns:1fr;padding-top:44px}}
+  .eyebrow{display:inline-flex;gap:8px;align-items:center;padding:5px 12px;border-radius:999px;background:rgba(59,130,246,.12);color:var(--accent-2);font-size:13px;font-weight:500}
+  .hero h1{font-size:46px;line-height:1.1;margin:18px 0 16px;font-weight:700;letter-spacing:-.02em}
+  @media (max-width:600px){.hero h1{font-size:33px}}
+  .grad{background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{color:var(--muted);font-size:17px;max-width:560px;margin:0}
+  .lead b{color:var(--text);font-weight:600}
+  .cta-row{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+  .trust{margin-top:22px;color:var(--muted);font-size:13px;display:flex;gap:18px;flex-wrap:wrap}
+  .trust span:before{content:"✓ ";color:var(--ok)}
+  .window{background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.45);overflow:hidden}
+  .window-bar{display:flex;gap:6px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;color:var(--muted)}
+  .window-bar i{width:10px;height:10px;border-radius:50%;background:#2a3757;display:block}
+  .window-bar span{margin-left:8px}
+  .window-body{padding:16px;overflow-x:auto}
+  .sheet{width:100%;border-collapse:collapse;font-size:13px}
+  .sheet th,.sheet td{padding:8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+  .sheet th{color:var(--muted);font-weight:500;font-size:12px}
+  .up{color:#86efac;font-weight:600}
+  .down{color:var(--err);font-weight:600}
+  .window-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+  .chip{display:inline-block;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,.14);color:var(--accent-2);font-size:13px}
+
+  /* Hero mockup – realistic Google Sheets look */
+  .gs{background:#fff;color:#202124;border-radius:14px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.5);font:12px/1.4 Arial,"Segoe UI",sans-serif;min-width:0}
+  .gs-top{display:flex;gap:10px;align-items:center;padding:10px 12px 6px}
+  .gs-icon{flex:none;width:22px;height:28px;border-radius:3px;background:#0f9d58;position:relative}
+  .gs-icon:after{content:"";position:absolute;left:5px;right:5px;top:9px;bottom:6px;border:2px solid #fff;border-radius:1px;
+    background:linear-gradient(#fff,#fff) 50% 0/2px 100% no-repeat,linear-gradient(#fff,#fff) 0 50%/100% 2px no-repeat}
+  .gs-title{font-size:15px;color:#202124}
+  .gs-menu{display:flex;gap:12px;color:#444;font-size:12px;margin-top:2px;flex-wrap:wrap}
+  .gs-addon{background:#e8f0fe;color:#1a73e8;padding:0 6px;border-radius:4px;font-weight:600}
+  .gs-formula{display:flex;gap:10px;align-items:center;border-top:1px solid #e0e0e0;border-bottom:1px solid #e0e0e0;padding:4px 10px;color:#3c4043;background:#f8f9fa}
+  .gs-formula .ref{min-width:30px;color:#5f6368}
+  .gs-formula .fx{color:#9aa0a6;font-style:italic;border-left:1px solid #dadce0;padding-left:10px}
+  .gs-grid{overflow-x:auto}
+  .gs table{border-collapse:collapse;white-space:nowrap}
+  /* Export sheet: the empty column G stretches to fill the width like a real spreadsheet */
+  [data-sheet=queries] table{width:100%}
+  .gs td.fill,.gs th.fill{padding:0;min-width:0}
+  .gs tr.empty td{height:22px}
+  .gs th,.gs td{border:1px solid #e2e3e3;padding:4px 7px;text-align:left;font-weight:400}
+  .gs thead th{background:#f8f9fa;color:#5f6368;text-align:center;font-size:11px;padding:2px 7px}
+  .gs td.rn{background:#f8f9fa;color:#5f6368;text-align:center;font-size:11px;width:26px;padding:4px 4px}
+  .gs tr.hdr td:not(.rn){font-weight:700;background:#f1f3f4;white-space:normal;vertical-align:top;font-size:11px;line-height:1.3}
+  .gs td.num{text-align:right}
+  .gs td.url{color:#1a73e8}
+  .gs td.active{outline:2px solid #1a73e8;outline-offset:-2px}
+  .gs td.mom{white-space:normal;min-width:134px;max-width:175px;line-height:1.35}
+  .gs .hdr td{white-space:normal}
+  .gs .g{color:#188038;font-weight:700}
+  .gs .r{color:#c5221f;font-weight:700}
+  .gs .n{color:#5f6368}
+  .gs-tabs{display:flex;gap:2px;align-items:center;background:#f1f3f4;border-top:1px solid #e0e0e0;padding:4px 10px;font-size:12px;color:#5f6368}
+  .gs-tabs span{padding:3px 10px;border-radius:4px}
+  .gs-tabs span.on{background:#fff;color:#1a73e8;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .gs-tabs span[data-tab]{cursor:pointer}
+  .gs tr.gap td{color:#9aa0a6;text-align:center;padding:1px 7px;background:#fafafa}
+  .gs td.rn{min-width:26px}
+  .gs-caption{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--muted)}
+  .gs-caption button{background:none;border:none;color:var(--accent-2);font:inherit;font-size:12px;cursor:pointer;padding:0}
+  /* Animated demo: the add-on menu is clicked and the report fills in */
+  .gs{position:relative}
+  .gs-addon{transition:background .2s,box-shadow .2s}
+  .gs-addon.pressed{background:#d2e3fc;box-shadow:0 0 0 2px #1a73e8}
+  .gs-drop{position:absolute;top:50px;z-index:2;background:#fff;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.25);padding:6px 0;min-width:190px;
+    opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .2s;pointer-events:none}
+  .gs-drop.open{opacity:1;transform:none}
+  .gs-drop div{padding:6px 14px;color:#202124}
+  .gs-drop div.hl{background:#e8f0fe}
+  .gs td.pending,.gs td.pending *{color:transparent !important}
+  .gs td.filled{animation:cellIn .35s ease-out}
+  @keyframes cellIn{from{background:#e6f4ea}to{background:transparent}}
+  .gs-status{color:#86efac}
+  /* Phones: hide one less important column per sheet so the colour-coded changes stay visible */
+  @media (max-width:600px){
+    .gs{font-size:10.5px}
+    .gs th,.gs td{padding:3px 4px}
+    .gs td.mom{min-width:108px}
+    .gs-menu span:not(.gs-addon):nth-child(n+4){display:none}
+    [data-sheet=positions] th:nth-child(5),[data-sheet=positions] td:nth-child(5){display:none}
+    [data-sheet=queries] th:nth-child(4),[data-sheet=queries] td:nth-child(4),
+    [data-sheet=queries] th:nth-child(7),[data-sheet=queries] td:nth-child(7),
+    [data-sheet=queries] th:nth-child(n+8),[data-sheet=queries] td:nth-child(n+8){display:none}
+  }
+  .cta-note{margin:12px 0 0;color:var(--muted);font-size:13px}
+  .cta-note b{color:var(--text);font-weight:500}
+
+  /* Key numbers and the two main benefits */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:8px 0 0}
+  @media (max-width:760px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
+  .stat b{display:block;font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+  .stat span{color:var(--muted);font-size:14px}
+  .big2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:860px){.big2{grid-template-columns:1fr}}
+  .big2 .card{padding:26px}
+  .big2 h3{font-size:22px;margin:10px 0 8px;letter-spacing:-.01em}
+  .big2 p{color:var(--muted);margin:0;font-size:15px}
+  .bars{margin:22px 0 6px;display:grid;gap:12px}
+  .bar-row{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;font-size:13px}
+  @media (max-width:520px){.bar-row{grid-template-columns:1fr}}
+  .bar{height:30px;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-weight:600;font-size:13px;white-space:nowrap}
+  .bar.small{width:2%;min-width:56px;background:#2a3757;color:var(--muted)}
+  .bar.full{width:100%;background:linear-gradient(90deg,#3b82f6,#a78bfa);color:#fff}
+  .timeline{margin:22px 0 6px;display:grid;gap:10px}
+  .tl{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+  .tl i{font-style:normal;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:rgba(59,130,246,.16);color:var(--accent-2);font-weight:700}
+  .tl b{display:block;font-weight:600}
+  .tl span{color:var(--muted);font-size:14px}
+  .mom-chip{display:inline-flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .mom-chip span{padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600}
+  .mom-chip .g{background:rgba(34,197,94,.15);color:#86efac}
+  .mom-chip .r{background:rgba(248,113,113,.15);color:var(--err)}
+
+  section{padding:64px 0}
+  .section-head{text-align:center;max-width:680px;margin:0 auto 36px}
+  .section-head h2{font-size:32px;margin:10px 0;letter-spacing:-.01em}
+  .section-head p{color:var(--muted);margin:0}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media (max-width:900px){.grid3{grid-template-columns:1fr 1fr}}
+  @media (max-width:600px){.grid3{grid-template-columns:1fr}}
+  .feature .icon{width:40px;height:40px;border-radius:10px;background:rgba(59,130,246,.14);display:grid;place-items:center;font-size:19px;margin-bottom:12px}
+  .feature h3,.step h3,.pain h3,.audience h3{margin:0 0 6px;font-size:16px}
+  .feature p,.step p,.pain p,.audience p{margin:0;color:var(--muted);font-size:14px}
+  .pain{border-color:rgba(248,113,113,.25)}
+  .pain .label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--err);margin-bottom:8px}
+  .pain .fix{display:block;margin-top:12px;font-size:14px;color:#86efac}
+  .also{text-align:center;color:var(--muted);font-size:14px;margin:22px 0 0}
+  .audience ul{margin:12px 0 0;padding:0;list-style:none}
+  .audience li{color:var(--muted);font-size:14px;padding:3px 0}
+  .audience li:before{content:"✓ ";color:var(--ok)}
+  .steps{counter-reset:step}
+  .step:before{counter-increment:step;content:counter(step);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;font-weight:600;margin-bottom:12px}
+
+  .billing{display:flex;justify-content:center;margin-bottom:28px}
+  .toggle{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px}
+  .toggle button{height:34px;padding:0 14px;border:none;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+  .toggle button.on{background:var(--panel-2);color:var(--text)}
+  .save{font-size:11px;background:rgba(34,197,94,.15);color:#86efac;padding:2px 6px;border-radius:6px}
+  .plans{display:grid;grid-template-columns:repeat(2,minmax(0,400px));justify-content:center;gap:16px;align-items:stretch}
+  @media (max-width:900px){.plans{grid-template-columns:1fr}}
+  .plan{display:flex;flex-direction:column;position:relative}
+  .plan.featured{border:2px solid var(--accent)}
+  .badge{position:absolute;top:-12px;left:22px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+  .plan h3{margin:0;font-size:18px}
+  .plan .desc{color:var(--muted);font-size:14px;margin:4px 0 16px}
+  .price{font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+  .price small{font-size:14px;color:var(--muted);font-weight:400}
+  .price-note{color:var(--muted);font-size:12px;min-height:18px;margin-top:4px}
+  .plan ul{list-style:none;padding:0;margin:18px 0 22px;flex:1}
+  .plan li{padding:5px 0;font-size:14px}
+  .plan li:before{content:"✓";color:var(--ok);margin-right:8px}
+  .pricing-note{text-align:center;color:var(--muted);font-size:13px;margin-top:18px}
+  .pricing-note b{color:var(--text);font-weight:500}
+
+  .topbar{display:block;text-align:center;padding:9px 16px;font-size:14px;color:var(--text);
+    background:linear-gradient(90deg,rgba(59,130,246,.35),rgba(167,139,250,.35));border-bottom:1px solid rgba(96,165,250,.4)}
+  .topbar b{font-weight:600}
+  .lt-timer{color:var(--warn);font-weight:600}
+  .lt-banner{display:flex;gap:16px;align-items:center;flex-wrap:wrap;max-width:816px;margin:0 auto 22px;padding:20px 24px;border-radius:16px;
+    background:linear-gradient(135deg,rgba(59,130,246,.18),rgba(167,139,250,.18));border:1px solid rgba(96,165,250,.5)}
+  .lt-banner h3{margin:6px 0 2px;font-size:20px}
+  .lt-meta{color:var(--muted);font-size:14px}
+  .lt-right{margin-left:auto;text-align:right}
+  .lt-price{font-size:32px;font-weight:700;line-height:1.1}
+  .lt-price small{font-size:13px;color:var(--muted);font-weight:400}
+  .lt-right .btn{margin-top:8px}
+
+  .webapp{display:flex;gap:18px;align-items:center;flex-wrap:wrap;max-width:816px;margin:0 auto}
+  .webapp p{margin:4px 0 0;color:var(--muted);font-size:14px}
+  .webapp .btn{margin-left:auto}
+  .faq{max-width:760px;margin:0 auto;display:grid;gap:10px}
+  .faq details{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+  .faq summary{cursor:pointer;font-weight:600}
+  .faq p{color:var(--muted);margin:10px 0 0;font-size:14px}
+  .final{text-align:center;padding:48px 24px}
+  .final h2{font-size:28px;margin:0 0 8px}
+  .final p{color:var(--muted);margin:0 0 22px}
+  footer{border-top:1px solid var(--border);padding:28px 0;color:var(--muted);font-size:13px;margin-top:20px}
+  footer .row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+  footer a{color:var(--muted)}
+  .disclaimer{margin:14px 0 0;font-size:12px;color:#6b7896}
+
+  .modal{position:fixed;inset:0;z-index:50;background:rgba(5,8,18,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px}
+  .modal.hidden{display:none}
+  .modal .card{max-width:440px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.55)}
+  .modal h2{margin:12px 0 8px;font-size:22px}
+  .modal p{color:var(--muted);margin:0 0 20px;font-size:14px}
+  .modal .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<a class="topbar hidden" id="lt-topbar" href="#pricing"></a>
+<nav class="top"><div class="container">
+  <a class="brand" href="#"><span class="logo">G</span><span data-brand>GSC Fetch</span></a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div class="nav-right">
+    <a class="btn ghost" data-app="login" data-track="Nav: Log in">Log in</a>
+    <a class="btn primary" data-app="signup" data-plan="pro" data-track="Nav: Free trial">Start free trial</a>
+  </div>
+</div></nav>
+
+<main class="container">
+  <div class="hero">
+    <div>
+      <span class="eyebrow">For SEO specialists, agencies and e‑commerce teams</span>
+      <h1>Automated monthly GSC reports and fast SEO audits <span class="grad">right in Google Sheets</span></h1>
+      <p class="lead">Export up to <b>50,000 rows instead of the 1,000-row limit</b> in Search Console. Track positions, impressions and landing pages <b>for the keywords you choose</b>, month over month – no manual copying.</p>
+      <div class="cta-row">
+        <a class="btn primary lg" data-app="signup" data-plan="pro" data-track="Hero: Free trial">Start 7-day free trial</a>
+        <a class="btn lg" href="#pricing" data-track="Hero: See pricing">See pricing</a>
+      </div>
+      <p class="cta-note"><b>7 days free</b>, then from €9.99/month. Cancel anytime from your account.</p>
+      <div class="trust"><span>Your data stays in your Sheets</span><span>Uses your own Search Console access</span><span>Secure payments via Stripe</span></div>
+    </div>
+    <div style="min-width:0">
+      <div class="gs" role="img" aria-label="Google Sheets with an automatic monthly report: position, impressions, top landing page and month-over-month changes for each keyword">
+        <div class="gs-top">
+          <span class="gs-icon"></span>
+          <div>
+            <div class="gs-title">Client A – SEO report 2026</div>
+            <div class="gs-menu"><span>File</span><span>Edit</span><span>View</span><span>Insert</span><span>Format</span><span>Data</span><span>Extensions</span><span class="gs-addon">GSC Fetch ▾</span></div>
+          </div>
+        </div>
+        <div class="gs-drop" id="gs-drop" aria-hidden="true"><div class="hl">▶ Run monthly report</div><div>Export queries + pages</div><div>Find cannibalization</div><div>Audit URLs / sitemap</div></div>
+        <div class="gs-formula"><span class="ref" id="gs-ref">B2</span><span class="fx">fx</span><span id="gs-fx">5.1</span></div>
+        <div class="gs-grid" data-sheet="positions"><table>
+          <thead><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr></thead>
+          <tbody>
+            <tr class="hdr"><td class="rn">1</td><td>Keyword</td><td>Position<br>1–31 Oct</td><td>Impressions<br>1–31 Oct</td><td>Top landing page<br>1–31 Oct</td><td>Month over month</td></tr>
+            <tr><td class="rn">2</td><td>mountain bike</td><td class="num active">5.1</td><td class="num">18,420</td><td class="url">/mountain-bikes</td><td class="mom"><span class="g">Position +39.3% ↑</span> | <span class="g">Impr. +21.4% ↑</span></td></tr>
+            <tr><td class="rn">3</td><td>electric bike</td><td class="num">2.8</td><td class="num">12,960</td><td class="url">/e-bikes</td><td class="mom"><span class="g">Position +12.5% ↑</span> | <span class="n">LP unchanged</span></td></tr>
+            <tr><td class="rn">4</td><td>road bike</td><td class="num">14.9</td><td class="num">3,105</td><td class="url">/road-bikes</td><td class="mom"><span class="r">Position −17.3% ↓</span> | <span class="r">Impr. −8.2% ↓</span></td></tr>
+            <tr><td class="rn">5</td><td>kids bike 20"</td><td class="num">18.2</td><td class="num">1,240</td><td class="url">/kids-bikes</td><td class="mom"><span class="g">Position: new</span></td></tr>
+            <tr><td class="rn">6</td><td>bike helmet</td><td class="num">6.0</td><td class="num">4,870</td><td class="url">/helmets</td><td class="mom"><span class="n">Position no change</span> | <span class="r">LP changed</span></td></tr>
+          </tbody>
+        </table></div>
+        <div class="gs-grid hidden" data-sheet="queries"><table>
+          <thead><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th class="fill">G</th></tr></thead>
+          <tbody>
+            <tr class="hdr"><td class="rn">1</td><td>Query</td><td>URL</td><td>Clicks</td><td>Impressions</td><td>Position</td><td>CTR</td><td class="fill"></td></tr>
+            <tr><td class="rn">2</td><td>mountain bike</td><td class="url">/mountain-bikes</td><td class="num">1,204</td><td class="num">18,420</td><td class="num">5.1</td><td class="num">6.54%</td><td class="fill"></td></tr>
+            <tr><td class="rn">3</td><td>electric bike</td><td class="url">/e-bikes</td><td class="num">986</td><td class="num">12,960</td><td class="num">2.8</td><td class="num">7.61%</td><td class="fill"></td></tr>
+            <tr><td class="rn">4</td><td>best mtb 2026</td><td class="url">/blog/best-mtb</td><td class="num">412</td><td class="num">9,875</td><td class="num">7.9</td><td class="num">4.17%</td><td class="fill"></td></tr>
+            <tr><td class="rn">5</td><td>road bike</td><td class="url">/road-bikes</td><td class="num">97</td><td class="num">3,105</td><td class="num">14.9</td><td class="num">3.12%</td><td class="fill"></td></tr>
+            <tr class="gap"><td class="rn">⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td>⋮</td><td class="fill"></td></tr>
+            <tr><td class="rn">50001</td><td>red kids bike</td><td class="url">/kids-bikes</td><td class="num">0</td><td class="num">3</td><td class="num active">48.0</td><td class="num">0.00%</td><td class="fill"></td></tr>
+            <tr class="empty"><td class="rn">50002</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="fill"></td></tr>
+            <tr class="empty"><td class="rn">50003</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="fill"></td></tr>
+          </tbody>
+        </table></div>
+        <div class="gs-tabs"><span class="on" data-tab="positions">Positions</span><span data-tab="queries">GSC_queries_url</span><span>+</span></div>
+      </div>
+      <div class="gs-caption"><span id="gs-status">⏱ New columns are added automatically every month</span><span>Example data · <button type="button" id="gs-replay">↻ Replay</button></span></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>50,000 rows</b><span>per export – vs 1,000 in the Search Console interface</span></div>
+    <div class="stat"><b>Every month</b><span>an automatic report with month-over-month changes</span></div>
+    <div class="stat"><b>0 copy‑paste</b><span>results land straight in your Google Sheets</span></div>
+  </div>
+
+  <section id="benefits">
+    <div class="section-head"><span class="eyebrow">Why teams switch</span><h2>The two things that save the most time</h2></div>
+    <div class="big2">
+      <div class="card">
+        <span class="eyebrow">Export</span>
+        <h3>50× more data than the GSC export</h3>
+        <p>The Search Console interface stops at 1,000 rows. On larger sites and e‑shops that hides most of your queries and pages. Pull them through the official API straight into Sheets.</p>
+        <div class="bars">
+          <div class="bar-row"><span>GSC interface export</span><div class="bar small">1,000</div></div>
+          <div class="bar-row"><span><span data-brand>GSC Fetch</span> (Pro)</span><div class="bar full">50,000 rows</div></div>
+        </div>
+        <p style="font-size:13px;margin-top:10px">Queries, pages, clicks, impressions, CTR and position. Up to 25,000 rows on Starter.</p>
+      </div>
+      <div class="card">
+        <span class="eyebrow">Monthly report</span>
+        <h3>A monthly report that writes itself</h3>
+        <p>You decide which keywords matter. Add them once, and every month the add-on fills in last month's data next to the previous month and highlights what changed.</p>
+        <div class="timeline">
+          <div class="tl"><i>1</i><div><b>You choose the keywords</b><span>Paste your priority keywords into column A and pick the GSC property – once per client or website.</span></div></div>
+          <div class="tl"><i>2</i><div><b>Data is fetched automatically</b><span>At the start of each month, once Search Console data is complete – even with your computer off.</span></div></div>
+          <div class="tl"><i>3</i><div><b>Changes are colour-coded</b><span>Position, impressions and landing page compared with the previous month.</span></div></div>
+        </div>
+        <div class="mom-chip"><span class="g">Position +39.3% ↑</span><span class="r">Impr. −8.2% ↓</span><span class="r">LP changed</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="problems">
+    <div class="section-head"><span class="eyebrow">Sound familiar?</span><h2>Stop copying data out of Search Console</h2><p>The routine work that eats hours every month – done for you, in the spreadsheet you already use.</p></div>
+    <div class="grid3">
+      <div class="card pain"><span class="label">The problem</span><h3>GSC exports stop at 1,000 rows</h3><p>On larger sites and e‑shops you never see the full picture of queries and pages.</p><span class="fix">→ Pull up to 50,000 rows via the API, straight into Sheets.</span></div>
+      <div class="card pain"><span class="label">The problem</span><h3>Monthly reports are copy‑paste work</h3><p>Every client, every month: export, paste, format, compare with last month.</p><span class="fix">→ Set it once. New columns and colour-coded changes appear every month.</span></div>
+      <div class="card pain"><span class="label">The problem</span><h3>A full crawler for a quick check</h3><p>You just want to verify a list of URLs or a sitemap, not set up a desktop crawl.</p><span class="fix">→ Paste URLs or a sitemap and get status, indexability and meta in one table.</span></div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="section-head"><span class="eyebrow">Features</span><h2>Everything in one Google Sheets add-on</h2><p>Opens from a menu in your spreadsheet. Results land in tables you can filter, share and extend.</p></div>
+    <div class="grid3">
+      <div class="card feature"><div class="icon">📈</div><h3>Automated monthly GSC report</h3><p>Average position, impressions and preferred landing page for your priority keywords, with month-over-month changes in green and red.</p></div>
+      <div class="card feature"><div class="icon">📋</div><h3>Query &amp; page export up to 50,000 rows</h3><p>Clicks, impressions, CTR and position for queries and pages – far beyond the 1,000 rows you can export from the GSC interface.</p></div>
+      <div class="card feature"><div class="icon">🎯</div><h3>Cannibalization report</h3><p>Find queries where several of your URLs compete for the same rankings, with each URL's share of impressions and position.</p></div>
+      <div class="card feature"><div class="icon">🔍</div><h3>URL &amp; sitemap audit</h3><p>Import any sitemap or URL list and get status codes, indexability, canonicals, titles, meta descriptions and H1 count.</p></div>
+      <div class="card feature"><div class="icon">🛒</div><h3>Built for e‑commerce</h3><p>Every URL is labelled as category, product or page. Spot categories with zero or one product and missing category descriptions.</p></div>
+      <div class="card feature"><div class="icon">↪</div><h3>Redirect chains &amp; list comparison</h3><p>See every hop to the final URL, and compare two lists – for example, which URLs are missing from your sitemap.</p></div>
+    </div>
+    <p class="also">Also included: language-folder filters for multilingual sites in one GSC property (e.g. only URLs without /de/ or /fr/).</p>
+  </section>
+
+  <section id="who">
+    <div class="section-head"><span class="eyebrow">Who it's for</span><h2>Built by an SEO, for people who live in spreadsheets</h2></div>
+    <div class="grid3">
+      <div class="card audience"><h3>SEO agencies</h3><p>Monthly reporting for every client without manual exports.</p>
+        <ul><li>One report sheet per client</li><li>Automatic month-over-month comparison</li><li>Share results straight from Sheets</li></ul></div>
+      <div class="card audience"><h3>E‑commerce teams</h3><p>Technical checks for large catalogues in minutes.</p>
+        <ul><li>Empty and single-product categories</li><li>Missing category descriptions</li><li>Redirects and indexability at scale</li></ul></div>
+      <div class="card audience"><h3>Freelancers &amp; in‑house SEOs</h3><p>Faster audits and reports without another dashboard to learn.</p>
+        <ul><li>Verify any URL list in seconds</li><li>Full GSC data, not just 1,000 rows</li><li>Your formulas, your format</li></ul></div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="section-head"><span class="eyebrow">How it works</span><h2>Up and running in three minutes</h2></div>
+    <div class="grid3 steps">
+      <div class="card step"><h3>Sign in with Google</h3><p>Install the add-on and use the Google account that has access to Search Console. No new password.</p></div>
+      <div class="card step"><h3>Choose your keywords</h3><p>Paste the keywords you want to track into column A – you decide what matters – and pick a GSC property from the list.</p></div>
+      <div class="card step"><h3>Get a new report every month</h3><p>Each month the add-on adds four columns: position, impressions, top landing page and changes vs last month. Earlier months stay as history.</p></div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <div class="section-head"><span class="eyebrow">Pricing</span><h2>Simple pricing</h2><p>7-day free trial. Prices include VAT. Cancel anytime.</p></div>
+    <div class="billing"><div class="toggle"><button data-period="monthly" class="on">Monthly</button><button data-period="yearly">Yearly <span class="save">2 months free</span></button></div></div>
+    <div class="lt-banner hidden" id="lt-banner"></div>
+    <div class="plans" id="plans"></div>
+    <p class="pricing-note"><b>7 days free</b>, then billed monthly or yearly. Cancel anytime from your account – you keep access until the end of the paid period.</p>
+  </section>
+
+  <section id="web-version">
+    <div class="card webapp">
+      <div>
+        <h3 style="margin:0">Not working in Google Sheets?</h3>
+        <p>We're considering a standalone web version. Leave your email and we'll let you know if it happens.</p>
+      </div>
+      <a class="btn" id="web-waitlist" data-track="Web version: Waitlist">Join the web version waitlist</a>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="section-head"><span class="eyebrow">FAQ</span><h2>Frequently asked questions</h2></div>
+    <div class="faq">
+      <details><summary>Where is my data stored?</summary><p>In your own Google Sheets. The add-on only remembers your settings and the list of connected sheets – it does not store your Search Console data.</p></details>
+      <details><summary>What do I need to get started?</summary><p>A Google account with verified access to the website in Google Search Console, and a spreadsheet you can edit.</p></details>
+      <details><summary>Which keywords are tracked?</summary><p>Only the ones you choose. Paste your priority keywords into column A of the report sheet – for example the keywords you agreed on with a client – and the add-on fills in their data every month. You can add or remove keywords anytime.</p></details>
+      <details><summary>Is this a rank tracker?</summary><p>It reports the average position, impressions and top landing page from your own Search Console data – the numbers Google itself measures for your site. It does not scrape search results, so there are no per-keyword credits to buy.</p></details>
+      <details><summary>Why 50,000 rows when Search Console only exports 1,000?</summary><p>The Search Console interface limits exports to 1,000 rows. The add-on reads the same data through the official Search Console API, which allows much larger exports – up to 50,000 rows on the Pro plan.</p></details>
+      <details><summary>When is the monthly report updated?</summary><p>Search Console finalises data with a delay of a few days, so the report for the previous month is collected at the start of each month once the data is complete.</p></details>
+      <details><summary>What counts as cannibalization?</summary><p>A query where two or more of your URLs receive a meaningful share of impressions. The report shows each URL's share and average position, so you can decide which page should own the query.</p></details>
+      <details><summary>Does it work with multilingual sites in one GSC property?</summary><p>Yes. You can include only URLs without a language folder, exclude specific folders such as /de/ or /fr/, or include only selected ones.</p></details>
+      <details><summary>How does the free trial work?</summary><p>You get full access to Pro for 7 days. Cancel before the trial ends and you won't be charged.</p></details>
+      <details><summary>How do I pay and cancel?</summary><p>By card, Apple Pay or Google Pay through Stripe. You can cancel anytime from your account; you keep access until the end of the paid period.</p></details>
+      <details><summary>Is this a Google product?</summary><p>No. It's an independent add-on that uses the official Google Search Console API with your permission. It is not affiliated with or endorsed by Google.</p></details>
+    </div>
+  </section>
+
+  <div class="card final">
+    <h2>Your next monthly report could write itself</h2>
+    <p>Sign in with Google and get your first report in a few minutes.</p>
+    <a class="btn primary lg" data-app="signup" data-plan="pro" data-track="Footer CTA: Free trial">Start 7-day free trial</a>
+    <p class="cta-note">7 days free · cancel anytime from your account</p>
+  </div>
+</main>
+
+<footer><div class="container">
+  <div class="row">
+    <span>© 2026 <span data-brand>GSC Fetch</span></span>
+    <span><a href="#" id="terms">Terms</a> · <a href="#" id="privacy">Privacy</a> · <a id="contact">Contact</a></span>
+  </div>
+  <p class="disclaimer">Google, Google Sheets and Google Search Console are trademarks of Google LLC. <span data-brand>GSC Fetch</span> is an independent product and is not affiliated with or endorsed by Google.</p>
+</div></footer>
+
+<div class="modal hidden" id="soon" role="dialog" aria-modal="true" aria-labelledby="soon-title">
+  <div class="card">
+    <span class="eyebrow">Coming soon</span>
+    <h2 id="soon-title">We're launching shortly</h2>
+    <p>Sign-in and subscriptions open in the next few days. Drop us a line and you'll be among the first to know.</p>
+    <div class="actions">
+      <a class="btn primary" id="soon-mail">Notify me at launch</a>
+      <button class="btn" id="soon-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SETTINGS – brand name, app URL (ends with /exec), contact, legal pages
+// ============================================================
+var CONFIG = {
+  brandName: 'GSC Fetch',
+  appUrl: 'https://script.google.com/macros/s/AKfycbwULwSVbV6u9bCFzj-iW69q5syD7YtWsWTWcMkssvI8G96ZWe7g0bNRAUkk7K-_MnEJLA/exec',
+  contactEmail: 'analytics@ui42.com',
+  termsUrl: '',
+  privacyUrl: '',
+  // true = buttons open the demo (demo/) on every host, e.g. GitHub Pages. Set to false when the real app is live.
+  demoMode: true,
+  // Same as LIFETIME_OFFER in gsc-web-app/Access.gs. The offer disappears automatically after the deadline.
+  lifetime: { enabled: true, plan: 'pro', planName: 'Pro', price: 499, endsAt: '2026-11-30T23:59:59+01:00', maxSeats: 100 }
+};
+// Same plans and prices as PLANS in gsc-web-app/Access.gs. The yearly price is a fixed amount.
+var PLANS = [
+  { key: 'starter', name: 'Starter', priceMonthly: 9.99, priceYearly: 99, desc: 'For occasional exports and smaller sites',
+    features: ['Up to 3 report sheets', 'Run reports and exports manually, anytime', 'Query & page export up to 25,000 rows',
+      'URL & sitemap audit up to ~2,000 URLs', 'Redirect chains and list comparison'] },
+  { key: 'pro', name: 'Pro', priceMonthly: 19.99, priceYearly: 199, desc: 'For monthly reporting and growing sites', featured: true,
+    features: ['Everything in Starter', 'Automated monthly report with month-over-month changes', 'Cannibalization report',
+      'Query & page export up to 50,000 rows', 'URL & sitemap audit up to ~10,000 URLs', 'Unlimited report sheets', 'Priority support'] }
+];
+
+// Measurement: custom events for Plausible (or Umami) once the script is added in <head>.
+function track(name){
+  try {
+    if (window.plausible) window.plausible(name);
+    else if (window.umami && window.umami.track) window.umami.track(name);
+  } catch (e) {}
+}
+function eur(n){
+  var rounded = Math.round(n * 100) / 100;
+  return '€' + (rounded % 1 ? rounded.toFixed(2) : rounded.toFixed(0));
+}
+function el(tag, cls, text){ var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+document.querySelectorAll('[data-brand]').forEach(function(n){ n.textContent = CONFIG.brandName; });
+
+// On localhost the buttons open the local demo (demo/), elsewhere the Apps Script app.
+// Until a real app URL is set, the buttons open the "Coming soon" dialog.
+// The Workspace form https://script.google.com/a/macros/<domain>/s/<id>/exec is accepted too.
+var LOCAL_DEMO = CONFIG.demoMode || ['localhost', '127.0.0.1', ''].indexOf(location.hostname) >= 0;
+var APP_READY = /^https:\/\/script\.google\.com\/(a\/macros\/[^/]+\/s|macros\/s)\/[\w-]+\/exec$/.test(CONFIG.appUrl) &&
+  CONFIG.appUrl.indexOf('TVOJE_ID') < 0;
+var soon = document.getElementById('soon');
+function openSoon(e){ e.preventDefault(); soon.classList.remove('hidden'); document.getElementById('soon-close').focus(); }
+function closeSoon(){ soon.classList.add('hidden'); }
+// mode: 'login' | 'signup'; plan + period from the pricing table open the checkout directly.
+function appHref(mode, plan, period){
+  var params = new URLSearchParams();
+  if (LOCAL_DEMO) params.set('mode', mode || 'signup');
+  if (plan) { params.set('plan', plan); params.set('period', period || 'monthly'); }
+  var query = params.toString() ? '?' + params.toString() : '';
+  return LOCAL_DEMO ? 'demo/login.html' + query : CONFIG.appUrl + query;
+}
+function linkToApp(a, plan, period){
+  var mode = a.getAttribute('data-app') || 'signup';
+  if (LOCAL_DEMO || APP_READY) { a.href = appHref(mode, plan, period); return; }
+  a.href = '#';
+  a.addEventListener('click', openSoon);
+}
+document.getElementById('soon-mail').href = 'mailto:' + CONFIG.contactEmail + '?subject=' + encodeURIComponent(CONFIG.brandName + ' – notify me at launch');
+document.getElementById('soon-close').onclick = closeSoon;
+soon.addEventListener('click', function(e){ if (e.target === soon) closeSoon(); });
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeSoon(); });
+
+// data-plan (e.g. Start free trial → Pro) opens the checkout for that plan after sign-in.
+document.querySelectorAll('[data-app]').forEach(function(a){ linkToApp(a, a.getAttribute('data-plan'), 'monthly'); });
+document.getElementById('contact').href = 'mailto:' + CONFIG.contactEmail;
+if (CONFIG.termsUrl) document.getElementById('terms').href = CONFIG.termsUrl;
+if (CONFIG.privacyUrl) document.getElementById('privacy').href = CONFIG.privacyUrl;
+// Interest test for a standalone web version (no product behind it yet).
+document.getElementById('web-waitlist').href = 'mailto:' + CONFIG.contactEmail + '?subject=' +
+  encodeURIComponent(CONFIG.brandName + ' – web version waitlist');
+document.addEventListener('click', function(e){
+  var t = e.target.closest('[data-track]');
+  if (t) track(t.getAttribute('data-track'));
+});
+
+var period = 'monthly';
+function renderPlans(){
+  var box = document.getElementById('plans');
+  box.innerHTML = '';
+  PLANS.forEach(function(p){
+    var monthly = period === 'yearly' ? p.priceYearly / 12 : p.priceMonthly;
+    var card = el('div', 'card plan' + (p.featured ? ' featured' : ''));
+    if (p.featured) card.appendChild(el('span', 'badge', 'Most popular'));
+    card.appendChild(el('h3', '', p.name));
+    card.appendChild(el('p', 'desc', p.desc));
+    var price = el('div', 'price', eur(monthly) + ' ');
+    price.appendChild(el('small', '', '/ month'));
+    card.appendChild(price);
+    card.appendChild(el('div', 'price-note', period === 'yearly' ? eur(p.priceYearly) + ' billed yearly – 2 months free' : 'Billed monthly, cancel anytime'));
+    var ul = el('ul');
+    p.features.forEach(function(f){ ul.appendChild(el('li', '', f)); });
+    card.appendChild(ul);
+    var a = el('a', 'btn lg full' + (p.featured ? ' primary' : ''), 'Start free trial');
+    a.setAttribute('data-track', 'Pricing: ' + p.name + ' ' + period);
+    linkToApp(a, p.key, period);
+    card.appendChild(a);
+    box.appendChild(card);
+  });
+}
+document.querySelectorAll('.toggle [data-period]').forEach(function(b){
+  b.onclick = function(){
+    period = b.getAttribute('data-period');
+    document.querySelectorAll('.toggle [data-period]').forEach(function(x){ x.classList.toggle('on', x === b); });
+    renderPlans();
+  };
+});
+renderPlans();
+
+// ---------- founder lifetime offer ----------
+function fmtDay(ts){ return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+function timeLeft(ts){
+  var ms = ts - Date.now();
+  var d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000);
+  return (d ? d + 'd ' : '') + h + 'h ' + m + 'm';
+}
+function renderLifetime(){
+  var lt = CONFIG.lifetime;
+  var endsAt = new Date(lt.endsAt).getTime();
+  var active = lt.enabled && Date.now() < endsAt;
+  var bar = document.getElementById('lt-topbar');
+  var box = document.getElementById('lt-banner');
+  bar.classList.toggle('hidden', !active);
+  box.classList.toggle('hidden', !active);
+  if (!active) return;
+  bar.innerHTML = '';
+  bar.appendChild(el('b', '', 'Founder offer: ' + lt.planName + ' Lifetime for ' + eur(lt.price)));
+  bar.appendChild(document.createTextNode(' · only ' + lt.maxSeats + ' licences · ends in '));
+  bar.appendChild(el('span', 'lt-timer', timeLeft(endsAt)));
+  bar.appendChild(document.createTextNode(' →'));
+
+  box.innerHTML = '';
+  var left = el('div');
+  left.appendChild(el('span', 'eyebrow', 'Founder offer until ' + fmtDay(endsAt)));
+  left.appendChild(el('h3', '', lt.planName + ' Lifetime – pay once, use it forever'));
+  var meta = el('div', 'lt-meta', 'Everything in ' + lt.planName + ', no recurring payments. Only ' + lt.maxSeats + ' licences, ends in ');
+  meta.appendChild(el('span', 'lt-timer', timeLeft(endsAt)));
+  meta.appendChild(document.createTextNode('.'));
+  left.appendChild(meta);
+  box.appendChild(left);
+  var right = el('div', 'lt-right');
+  var price = el('div', 'lt-price', eur(lt.price) + ' ');
+  price.appendChild(el('small', '', 'one-time'));
+  right.appendChild(price);
+  var a = el('a', 'btn primary lg', 'Get Lifetime');
+  a.setAttribute('data-app', 'signup');
+  a.setAttribute('data-track', 'Pricing: Lifetime');
+  linkToApp(a, lt.plan, 'lifetime');
+  right.appendChild(a);
+  box.appendChild(right);
+}
+renderLifetime();
+setInterval(renderLifetime, 30000);
+
+// ---------- hero demo: the add-on fills the report, then exports queries + URLs ----------
+// 1) The add-on menu is "clicked" → Run monthly report → the Positions sheet fills in
+//    and the month-over-month column appears.
+// 2) The menu is opened again → Export queries + pages → the GSC_queries_url sheet
+//    fills in down to row 50,001.
+(function(){
+  var gs = document.querySelector('.gs');
+  var addon = gs.querySelector('.gs-addon');
+  var drop = document.getElementById('gs-drop');
+  var dropItems = [].slice.call(drop.children);
+  var ref = document.getElementById('gs-ref');
+  var fx = document.getElementById('gs-fx');
+  var status = document.getElementById('gs-status');
+  var sheets = {
+    positions: gs.querySelector('[data-sheet=positions]'),
+    queries: gs.querySelector('[data-sheet=queries]')
+  };
+  var tabs = [].slice.call(gs.querySelectorAll('.gs-tabs [data-tab]'));
+  function rowsOf(sheet){ return [].slice.call(sheets[sheet].querySelectorAll('tbody tr:not(.hdr)')); }
+  var posRows = rowsOf('positions');
+  var queryRows = rowsOf('queries');
+  var timers = [];
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Both sheets keep the same height, so switching tabs does not move the page.
+  sheets.queries.style.minHeight = sheets.positions.offsetHeight + 'px';
+  sheets.positions.style.minHeight = sheets.positions.offsetHeight + 'px';
+
+  function at(ms, fn){ timers.push(setTimeout(fn, ms)); }
+  function cellsOf(row, from){ return [].slice.call(row.children).slice(from); }
+  function setPending(rows, from){
+    rows.forEach(function(r){ cellsOf(r, from).forEach(function(c){ c.classList.remove('filled'); c.classList.add('pending'); }); });
+  }
+  function fill(cells){ cells.forEach(function(c){ c.classList.remove('pending'); c.classList.add('filled'); }); }
+  function showSheet(name){
+    Object.keys(sheets).forEach(function(k){ sheets[k].classList.toggle('hidden', k !== name); });
+    tabs.forEach(function(t){ t.classList.toggle('on', t.getAttribute('data-tab') === name); });
+    if (name === 'positions') { ref.textContent = 'B2'; fx.textContent = '5.1'; }
+    else { ref.textContent = 'E50001'; fx.textContent = '48.0'; }
+  }
+  function openMenu(item){
+    drop.style.left = (addon.offsetLeft - 6) + 'px';
+    dropItems.forEach(function(d, i){ d.classList.toggle('hl', i === item); });
+    addon.classList.add('pressed');
+    drop.classList.add('open');
+  }
+  function closeMenu(){ addon.classList.remove('pressed'); drop.classList.remove('open'); }
+  function setStatus(text, done){ status.textContent = text; status.className = done ? 'gs-status' : ''; }
+
+  function play(){
+    timers.forEach(clearTimeout);
+    timers = [];
+    closeMenu();
+    showSheet('positions');
+    setPending(posRows, 2);
+    setPending(queryRows, 1);
+    fx.textContent = '';
+    setStatus('Running the monthly report…');
+
+    // 1) monthly report
+    at(500, function(){ openMenu(0); });
+    at(1500, closeMenu);
+    posRows.forEach(function(r, i){
+      at(1900 + i * 330, function(){ fill(cellsOf(r, 2).slice(0, 3)); if (i === 0) fx.textContent = '5.1'; });
+    });
+    var t = 1900 + posRows.length * 330 + 250;
+    posRows.forEach(function(r, i){ at(t + i * 260, function(){ fill(cellsOf(r, 2).slice(3)); }); });
+    t += posRows.length * 260 + 200;
+    at(t, function(){ setStatus('✓ Report updated for 1–31 Oct · 5 keywords', true); });
+
+    // 2) queries + URL export
+    t += 1800;
+    at(t, function(){ openMenu(1); setStatus('Exporting queries + pages…'); });
+    at(t + 1000, function(){ closeMenu(); showSheet('queries'); fx.textContent = ''; });
+    queryRows.forEach(function(r, i){
+      at(t + 1300 + i * 220, function(){ fill(cellsOf(r, 1)); });
+    });
+    at(t + 1300 + queryRows.length * 220 + 200, function(){
+      fx.textContent = '48.0';
+      setStatus('✓ 50,000 rows exported to GSC_queries_url – the GSC interface stops at 1,000', true);
+    });
+  }
+  tabs.forEach(function(tab){
+    tab.onclick = function(){
+      timers.forEach(clearTimeout);
+      timers = [];
+      closeMenu();
+      [posRows, queryRows].forEach(function(rows){ rows.forEach(function(r){ fill(cellsOf(r, 1)); }); });
+      showSheet(tab.getAttribute('data-tab'));
+      setStatus(tab.getAttribute('data-tab') === 'positions'
+        ? '✓ Report updated for 1–31 Oct · 5 keywords'
+        : '✓ 50,000 rows exported to GSC_queries_url – the GSC interface stops at 1,000', true);
+    };
+  });
+  document.getElementById('gs-replay').onclick = play;
+  if (!reduceMotion) play();
+})();
+</script>
+</body>
+</html>

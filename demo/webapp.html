@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="sk"><head><base target="_top"><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a1020; --panel:#111a2e; --panel-2:#16213a; --border:#22304f;
+    --text:#e6ebf5; --muted:#8a97b4; --accent:#3b82f6; --accent-2:#60a5fa;
+    --ok:#22c55e; --err:#f87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    background:var(--bg) radial-gradient(1200px 500px at 0% -10%,#1b2b55 0%,transparent 60%) no-repeat}
+  .wrap{max-width:960px;margin:0 auto;padding:40px 20px 80px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:28px}
+  .logo{flex:none;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#1e40af);display:grid;place-items:center;font-weight:600;font-size:18px;box-shadow:0 8px 24px rgba(59,130,246,.35)}
+  h1{font-size:22px;font-weight:600;margin:0}
+  .sub{color:var(--muted);font-size:14px;margin:2px 0 0}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:18px}
+  .card h2{font-size:15px;font-weight:600;margin:0 0 14px}
+  .grid{display:grid;grid-template-columns:2fr 1.5fr 110px auto;gap:12px;align-items:end}
+  @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  label.field{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+  input[type=text],input[type=number],select{width:100%;height:42px;padding:0 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font:inherit;outline:none;transition:border-color .15s,box-shadow .15s}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+  select option{background:var(--panel-2)}
+  button{height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font:inherit;font-size:14px;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+  button:hover{border-color:var(--accent-2)}
+  button:disabled,input:disabled,select:disabled{opacity:.5;cursor:default}
+  .primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
+  .primary:hover{background:#2563eb;border-color:#2563eb}
+  .grid .primary{height:42px;width:100%}
+  .danger{background:transparent;border-color:transparent;color:var(--err);margin-left:auto}
+  .danger:hover{border-color:var(--err)}
+  .target{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-top:12px}
+  .target:first-child{margin-top:0}
+  .target-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+  .target a{color:var(--text);font-weight:600;font-size:16px;text-decoration:none}
+  .target a:hover{color:var(--accent-2)}
+  .chip{display:inline-block;margin:6px 6px 0 0;padding:3px 10px;border-radius:999px;background:rgba(59,130,246,.14);color:var(--accent-2);font-size:13px}
+  .chip.filter{background:rgba(251,191,36,.12);color:#fcd34d}
+  .settings{display:grid;grid-template-columns:100px 130px minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:14px}
+  @media (max-width:760px){.settings{grid-template-columns:1fr 1fr}}
+  .settings label.field{font-size:11px;margin-bottom:4px}
+  .settings input,.settings select{height:36px;background:var(--panel)}
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted)}
+  .switch input{display:none}
+  .slider{position:relative;width:38px;height:22px;border-radius:999px;background:#2a3757;transition:background .2s}
+  .slider:after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+  .switch input:checked + .slider{background:var(--ok)}
+  .switch input:checked + .slider:after{transform:translateX(16px)}
+  .empty{color:var(--muted);text-align:center;padding:18px 0 4px;margin:0}
+  #statusline{display:flex;align-items:flex-start;gap:10px;min-height:22px}
+  #out{white-space:pre-wrap;font:13px/1.6 ui-monospace,Consolas,monospace;color:var(--muted)}
+  #out.ok{color:#86efac} #out.err{color:var(--err)} #out.busy{color:var(--accent-2)}
+  .spinner{display:none;flex:none;width:14px;height:14px;margin-top:4px;border:2px solid var(--accent-2);border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+  #statusline.busy .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  details{color:var(--muted);font-size:14px}
+  details b{color:var(--text);font-weight:500}
+  summary{cursor:pointer;color:var(--text);font-weight:600;font-size:15px}
+  details p{margin:10px 0 0}
+  a{color:var(--accent-2);text-decoration:none}
+  .hidden{display:none !important}
+  .account{margin-left:auto;text-align:right;font-size:13px;color:var(--muted)}
+  .pill{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;background:rgba(34,197,94,.15);color:#86efac;margin-bottom:4px}
+  .pill.warn{background:rgba(251,191,36,.14);color:#fcd34d}
+  .pill.info{background:rgba(59,130,246,.14);color:var(--accent-2)}
+  .account .links{display:flex;gap:12px;justify-content:flex-end;margin-top:2px}
+  .tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:4px;margin-bottom:18px;width:max-content;max-width:100%}
+  .tabs button{border:none;background:transparent;color:var(--muted);height:36px;font-weight:500}
+  .tabs button.on{background:var(--panel-2);color:var(--text)}
+  .acc-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .acc-plan{font-size:26px;font-weight:600}
+  .kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+  @media (max-width:600px){.kv{grid-template-columns:1fr}}
+  .kv div{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+  .kv span{display:block;font-size:12px;color:var(--muted)}
+  .kv b{font-weight:600}
+  .note{color:var(--muted);font-size:14px;margin:8px 0 0}
+  .form2{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+  .form2 .wide{grid-column:1 / -1}
+  @media (max-width:600px){.form2{grid-template-columns:1fr}}
+  .form2 label.field{margin:10px 0 6px}
+  input[readonly]{opacity:.7}
+  .change-box{background:var(--panel-2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px}
+  .pick{display:grid;gap:8px;margin:12px 0}
+  .pick label{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;background:var(--panel)}
+  .pick label.on{border-color:var(--accent)}
+  .pick input{accent-color:var(--accent)}
+  .pick .pp{margin-left:auto;font-weight:600;white-space:nowrap}
+  .pick small{color:var(--muted)}
+  .seg{display:inline-flex;gap:4px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:3px}
+  .seg button{height:30px;border:none;background:transparent;color:var(--muted)}
+  .seg button.on{background:var(--panel-2);color:var(--text)}
+  table.pay{width:100%;border-collapse:collapse;font-size:14px}
+  table.pay th,table.pay td{text-align:left;padding:9px 6px;border-bottom:1px solid var(--border)}
+  table.pay th{color:var(--muted);font-weight:500;font-size:12px}
+  .danger-zone{border-color:rgba(248,113,113,.35)}
+  .btn-danger{border-color:rgba(248,113,113,.5);color:var(--err);background:transparent}
+  .btn-danger:hover{border-color:var(--err)}
+  .card h2.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .limit{font-size:13px;font-weight:400;color:var(--muted)}
+  .switch.disabled{opacity:.55;cursor:not-allowed}
+  .lock-tag{font-size:11px;color:#fcd34d;background:rgba(251,191,36,.12);padding:2px 6px;border-radius:6px}
+  @media (max-width:600px){header{flex-wrap:wrap}.account{margin-left:0;text-align:left;width:100%}.account .links{justify-content:flex-start}}
+</style><title>GSC Fetch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="mock-gas.js"></script>
+</head><body><div class="wrap">
+<header>
+  <div class="logo">G</div>
+  <div><h1>GSC Fetch</h1><p class="sub">Pozície a queries z Google Search Console priamo do tvojich tabuliek</p></div>
+  <div class="account" id="account"></div>
+</header>
+
+<div class="tabs">
+  <button class="on" data-tab="tables">Tabuľky</button>
+  <button data-tab="account">Účet a predplatné</button>
+</div>
+
+<div class="card">
+  <h2>Stav</h2>
+  <div id="statusline"><span class="spinner"></span><span id="out">Pripravené.</span></div>
+</div>
+
+<div id="view-account" class="hidden"></div>
+
+<div id="view-tables">
+<div class="card">
+  <h2>Pridať tabuľku</h2>
+  <div class="grid">
+    <div><label class="field" for="sheet">URL tabuľky</label><input type="text" id="sheet" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
+    <div><label class="field" for="site">Web v GSC</label><select id="site"><option value="">Načítavam weby z GSC…</option></select></div>
+    <div><label class="field" for="days">Dni (queries)</label><input type="number" id="days" min="1" max="480" value="30"></div>
+    <div><button class="primary" onclick="add()">+ Pridať</button></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="row"><span>Moje tabuľky</span><span class="limit" id="limit-info"></span></h2>
+  <div id="list"></div>
+  <p id="empty" class="empty">Zatiaľ nemáš pridanú žiadnu tabuľku.</p>
+</div>
+
+<div class="card">
+  <details><summary>Ako to funguje</summary>
+    <p><b>Pozície</b> potrebujú hárok <b>Pozície</b> s kľúčovými slovami v stĺpci A od riadku 2. Výsledky sa zapisujú od stĺpca D a každý fetch pridá nový blok vpravo s porovnaním oproti minulému.</p>
+    <p><b>Auto-fetch pozícií</b> beží 1. deň v mesiaci medzi 8:00 a 9:00 a načíta celý predchádzajúci mesiac. Stránka pritom nemusí byť otvorená.</p>
+    <p><b>Všetky queries</b> a <b>Queries + URL</b> načítajú zvolený počet dní dozadu a zapíšu sa do hárkov GSC_queries a GSC_queries_url (vytvoria sa samy).</p>
+    <p><b>Max riadkov</b> platí pre všetky fetche: v pláne Starter do 25 000, v pláne Pro až 50 000. GSC vráti naraz najviac 25 000 riadkov, väčšie čísla sa načítajú po častiach. Pri veľmi veľkých číslach môže fetch prekročiť 6-minútový limit Google.</p>
+    <p><b>Mesačný monitoring</b> (auto-fetch pozícií) je súčasťou plánu Pro.</p>
+    <p><b>Jazykové verzie</b> filtrujú URL podľa prvého priečinka v adrese. <b>Iba bez jazykového prefixu</b> vynechá všetky URL typu /hu/, /pl/, /de/… (napríklad kellysbike.com/accessories_c29 ostane, kellysbike.com/hu/kiegeszitok_c29 nie). <b>Vylúčiť</b> alebo <b>Iba</b> zvolené verzie použijú kódy, ktoré zadáš, napríklad hu, pl, de.</p>
+    <p><b>Predvolený limit riadkov a jazykový filter</b> pre nové tabuľky si nastavíš v záložke Účet a predplatné.</p>
+  </details>
+</div>
+</div>
+</div>
+<script>
+var out = document.getElementById('out');
+var statusLine = document.getElementById('statusline');
+var LANG_MODES = [
+  ['all', 'Všetky URL'],
+  ['clean', 'Iba bez jazykového prefixu'],
+  ['exclude', 'Vylúčiť zvolené verzie'],
+  ['include', 'Iba zvolené verzie']
+];
+function val(id){ return document.getElementById(id).value; }
+function lock(on){ document.querySelectorAll('button,input,select').forEach(function(el){ el.disabled = on; }); }
+function status(msg, kind){
+  out.textContent = msg || 'Pripravené.';
+  out.className = kind || '';
+  statusLine.className = kind === 'busy' ? 'busy' : '';
+}
+function call(fn, args, onOk, msg){
+  lock(true); status(msg || 'Pracujem…', 'busy');
+  var runner = google.script.run
+    .withSuccessHandler(function(res){ lock(false); status('', ''); onOk(res); })
+    .withFailureHandler(function(err){ lock(false); status('CHYBA: ' + err.message, 'err'); });
+  runner[fn].apply(runner, args);
+}
+function el(tag, cls, text){
+  var node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+function button(label, cls, onClick){ var b = el('button', cls, label); b.onclick = onClick; return b; }
+function numberInput(value, min, max){
+  var input = el('input');
+  input.type = 'number'; input.min = min; input.max = max; input.value = value;
+  return input;
+}
+function field(label, input){
+  var wrap = el('div');
+  wrap.appendChild(el('label', 'field', label));
+  wrap.appendChild(input);
+  return wrap;
+}
+function needsCodes(mode){ return mode === 'exclude' || mode === 'include'; }
+function filterLabel(t){
+  var codes = (t.langCodes || []).map(function(c){ return '/' + c + '/'; }).join(' ');
+  if (t.langMode === 'clean') return 'Iba URL bez /xx/';
+  if (t.langMode === 'exclude' && codes) return 'Bez ' + codes;
+  if (t.langMode === 'include' && codes) return 'Iba ' + codes;
+  return '';
+}
+function eur(n){ return (Math.round(n * 100) / 100).toFixed(2).replace('.', ',') + ' €'; }
+function fmtDate(ts){ var d = new Date(ts); return d.getDate() + '. ' + (d.getMonth() + 1) + '. ' + d.getFullYear(); }
+var COUNTRIES = ['Slovensko', 'Česko', 'Maďarsko', 'Poľsko', 'Rakúsko', 'Nemecko', 'Iná krajina EÚ'];
+
+// ---------- hlavička s účtom ----------
+var ACCOUNT = null;
+function renderAccount(){
+  var box = document.getElementById('account');
+  box.innerHTML = '';
+  if (!ACCOUNT) return;
+  var ending = ACCOUNT.cancelAtPeriodEnd && ACCOUNT.until;
+  var pillText = ACCOUNT.planName + (ACCOUNT.period === 'lifetime' ? ' Lifetime' : ending ? ' · do ' + fmtDate(ACCOUNT.until) : '');
+  box.appendChild(el('span', 'pill' + (ending ? ' warn' : ''), pillText));
+  box.appendChild(el('div', '', ACCOUNT.name ? ACCOUNT.name + ' · ' + ACCOUNT.email : ACCOUNT.email));
+  var links = el('div', 'links');
+  var mine = el('a', '', 'Môj účet');
+  mine.href = '#';
+  mine.onclick = function(e){ e.preventDefault(); showTab('account'); };
+  var sw = el('a', '', 'Prepnúť účet');
+  sw.href = ACCOUNT.switchAccountUrl; sw.target = '_top';
+  links.appendChild(mine);
+  links.appendChild(sw);
+  box.appendChild(links);
+}
+// ---------- záložky ----------
+function showTab(name){
+  document.querySelectorAll('.tabs [data-tab]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-tab') === name); });
+  document.getElementById('view-tables').classList.toggle('hidden', name !== 'tables');
+  document.getElementById('view-account').classList.toggle('hidden', name !== 'account');
+  if (name === 'account') call('getAccountDetails', [], renderAccountView, 'Načítavam účet…');
+}
+document.querySelectorAll('.tabs [data-tab]').forEach(function(b){
+  b.onclick = function(){ showTab(b.getAttribute('data-tab')); };
+});
+
+// ---------- záložka Účet a predplatné ----------
+function card(title, cls){
+  var c = el('div', 'card' + (cls ? ' ' + cls : ''));
+  if (title) c.appendChild(el('h2', '', title));
+  return c;
+}
+function kv(box, label, value){
+  var d = el('div');
+  d.appendChild(el('span', '', label));
+  d.appendChild(el('b', '', value));
+  box.appendChild(d);
+}
+function textInput(value, readonly){
+  var i = el('input'); i.type = 'text'; i.value = value || ''; if (readonly) i.readOnly = true; return i;
+}
+function formField(label, input, wide){
+  var w = field(label, input);
+  if (wide) w.className = 'wide';
+  return w;
+}
+// Po zmene v účte prekreslí záložku aj hlavičku (plán, limity) a až potom ukáže hlášku.
+function afterAccountChange(d, message){
+  renderAccountView(d);
+  call('getWebState', [], function(s){ render(s); status(message, 'ok'); });
+}
+function renderAccountView(d){
+  var view = document.getElementById('view-account');
+  view.innerHTML = '';
+  var s = d.subscription;
+
+  // Predplatné
+  var subCard = card('Predplatné');
+  if (!s) {
+    subCard.appendChild(el('p', 'note', 'Nemáš aktívne predplatné.'));
+  } else {
+    var lifetime = s.period === 'lifetime';
+    var head = el('div', 'acc-head');
+    head.appendChild(el('span', 'acc-plan', s.planName + (lifetime ? ' Lifetime' : '')));
+    var statusText = s.source === 'admin' ? 'Administrátor' : s.source === 'manual' ? 'Pridelené ručne'
+      : lifetime ? 'Platí navždy' : s.cancelAtPeriodEnd ? 'Zrušené · platí do ' + fmtDate(s.until) : 'Aktívne';
+    head.appendChild(el('span', 'pill' + (s.cancelAtPeriodEnd ? ' warn' : ''), statusText));
+    if (s.source === 'demo') head.appendChild(el('span', 'pill info', 'Testovací režim'));
+    subCard.appendChild(head);
+    var facts = el('div', 'kv');
+    kv(facts, 'Obdobie', lifetime ? 'Lifetime' : s.period === 'yearly' ? 'Ročne' : s.period === 'monthly' ? 'Mesačne' : '—');
+    kv(facts, 'Cena', s.price != null ? eur(s.price) + (lifetime ? ' jednorazovo' : s.period === 'yearly' ? ' / rok' : ' / mesiac') : 'bez poplatku');
+    kv(facts, lifetime ? 'Ďalšia platba' : s.cancelAtPeriodEnd ? 'Prístup do' : 'Ďalšia platba',
+      lifetime ? 'žiadna' : s.until ? fmtDate(s.until) : '—');
+    subCard.appendChild(facts);
+
+    var actions = el('div', 'actions');
+    if (lifetime) {
+      subCard.appendChild(el('p', 'note', 'Máš zakladateľskú lifetime licenciu. Predplatné netreba obnovovať ani rušiť, všetky funkcie plánu ' + s.planName + ' máš navždy.'));
+    } else if (s.source === 'demo') {
+      var changeBox = el('div', 'change-box hidden');
+      actions.appendChild(button('Zmeniť plán', '', function(){
+        changeBox.classList.toggle('hidden');
+        if (!changeBox.classList.contains('hidden')) renderPlanChange(changeBox, d);
+      }));
+      if (s.cancelAtPeriodEnd) {
+        actions.appendChild(button('Obnoviť predplatné', 'primary', function(){
+          call('resumeSubscription', [], function(r){ afterAccountChange(r, 'Predplatné obnovené.'); });
+        }));
+      } else {
+        actions.appendChild(button('Zrušiť predplatné', 'btn-danger', function(){
+          if (!confirm('Zrušiť predplatné? Prístup ti ostane do ' + fmtDate(s.until) + ', potom sa aplikácia zamkne.')) return;
+          call('cancelSubscription', [], function(r){ afterAccountChange(r, 'Predplatné zrušené. Prístup máš do ' + fmtDate(s.until) + '.'); });
+        }));
+      }
+      subCard.appendChild(actions);
+      subCard.appendChild(changeBox);
+    } else if (s.source === 'stripe') {
+      if (d.portalUrl) {
+        var portal = el('a', 'primary', 'Spravovať v Stripe');
+        portal.href = d.portalUrl; portal.target = '_blank'; portal.rel = 'noopener';
+        portal.style.cssText = 'display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:10px';
+        actions.appendChild(portal);
+        subCard.appendChild(actions);
+        subCard.appendChild(el('p', 'note', 'Zmena plánu, zrušenie, zmena karty a faktúry sú v bezpečnom portáli Stripe.'));
+      } else {
+        subCard.appendChild(el('p', 'note', 'Pre zmenu alebo zrušenie predplatného napíš na ' + d.supportEmail + '.'));
+      }
+    } else {
+      subCard.appendChild(el('p', 'note', 'Prístup ti pridelil administrátor. Pre zmenu napíš na ' + d.supportEmail + '.'));
+    }
+  }
+  view.appendChild(subCard);
+
+  // Profil a fakturácia
+  var b = d.billing || {};
+  var profile = card('Profil a fakturačné údaje');
+  var form = el('div', 'form2');
+  var fName = textInput(d.name);
+  var fEmail = textInput(d.email, true);
+  var fCompany = textInput(b.company);
+  var fVat = textInput(b.vat); fVat.placeholder = 'SK2020123456';
+  var fAddress = textInput(b.address); fAddress.placeholder = 'Ulica, mesto, PSČ';
+  var fCountry = el('select');
+  COUNTRIES.forEach(function(c){ var o = el('option', '', c); o.value = c; fCountry.appendChild(o); });
+  fCountry.value = b.country || 'Slovensko';
+  form.appendChild(formField('Meno a priezvisko', fName));
+  form.appendChild(formField('E-mail (Google účet)', fEmail));
+  form.appendChild(formField('Firma (nepovinné)', fCompany));
+  form.appendChild(formField('IČ DPH (nepovinné)', fVat));
+  form.appendChild(formField('Adresa (nepovinné)', fAddress, true));
+  form.appendChild(formField('Krajina', fCountry));
+  profile.appendChild(form);
+  var saveRow = el('div', 'actions');
+  saveRow.appendChild(button('Uložiť zmeny', 'primary', function(){
+    var name = fName.value.trim();
+    call('updateProfile', [name, { name: name, company: fCompany.value, vat: fVat.value, address: fAddress.value, country: fCountry.value }],
+      function(r){ afterAccountChange(r, 'Profil uložený.'); });
+  }));
+  profile.appendChild(saveRow);
+  view.appendChild(profile);
+
+  // Predvolené nastavenia nových tabuliek
+  var defs = card('Predvolené nastavenia nových tabuliek');
+  defs.appendChild(el('p', 'note', 'Použijú sa pri každej novo pridanej tabuľke. Existujúce tabuľky sa nezmenia.'));
+  var dSet = el('div', 'settings');
+  var dDays = numberInput(d.defaults.daysBack, 1, 480);
+  var dRows = numberInput(d.defaults.rowLimit, 1, ACCOUNT ? ACCOUNT.maxRows : 1000000);
+  var dMode = el('select');
+  LANG_MODES.forEach(function(m){ var o = el('option', '', m[1]); o.value = m[0]; dMode.appendChild(o); });
+  dMode.value = d.defaults.langMode;
+  var dCodes = el('input'); dCodes.type = 'text'; dCodes.placeholder = 'hu, pl, de'; dCodes.value = (d.defaults.langCodes || []).join(', ');
+  var dCodesWrap = field('Kódy verzií', dCodes);
+  dCodesWrap.style.visibility = needsCodes(dMode.value) ? 'visible' : 'hidden';
+  dMode.onchange = function(){ dCodesWrap.style.visibility = needsCodes(dMode.value) ? 'visible' : 'hidden'; };
+  dSet.appendChild(field('Dni (queries)', dDays));
+  dSet.appendChild(field('Max riadkov', dRows));
+  dSet.appendChild(field('Jazykové verzie', dMode));
+  dSet.appendChild(dCodesWrap);
+  defs.appendChild(dSet);
+  var defRow = el('div', 'actions');
+  defRow.appendChild(button('Uložiť predvolené', 'primary', function(){
+    call('updateDefaults', [{ daysBack: dDays.value, rowLimit: dRows.value, langMode: dMode.value, langCodes: dCodes.value }],
+      function(r){ renderAccountView(r); document.getElementById('days').value = r.defaults.daysBack; status('Predvolené nastavenia uložené.', 'ok'); });
+  }));
+  defs.appendChild(defRow);
+  view.appendChild(defs);
+
+  // História platieb
+  var pays = card('História platieb');
+  if (!d.payments.length) {
+    pays.appendChild(el('p', 'note', 'Zatiaľ žiadne platby.'));
+  } else {
+    var table = el('table', 'pay');
+    var hr = el('tr');
+    ['Dátum', 'Plán', 'Obdobie', 'Suma', 'Stav'].forEach(function(h){ hr.appendChild(el('th', '', h)); });
+    table.appendChild(hr);
+    d.payments.forEach(function(p){
+      var tr = el('tr');
+      [fmtDate(p.date), p.planName + (p.note ? ' (' + p.note + ')' : ''),
+        p.period === 'lifetime' ? 'Lifetime' : p.period === 'yearly' ? 'Ročne' : 'Mesačne', eur(p.amount),
+        s && s.source === 'demo' ? 'Zaplatené (test)' : 'Zaplatené'].forEach(function(v){ tr.appendChild(el('td', '', v)); });
+      table.appendChild(tr);
+    });
+    pays.appendChild(table);
+  }
+  view.appendChild(pays);
+
+  // Prihlásenie a odstránenie účtu
+  var danger = card('Prihlásenie a účet', 'danger-zone');
+  danger.appendChild(el('p', 'note', 'Prihlasuješ sa Google účtom ' + d.email + '. Odstránenie účtu zmaže tvoje tabuľky v aplikácii, nastavenia, auto-fetch aj históriu. Dáta v tvojich Google Sheets ostanú.'));
+  var dangerRow = el('div', 'actions');
+  var sw = el('a', '', 'Prepnúť Google účet');
+  sw.href = d.switchAccountUrl; sw.target = '_top';
+  sw.style.cssText = 'display:inline-flex;align-items:center;height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--border);color:var(--text)';
+  dangerRow.appendChild(sw);
+  dangerRow.appendChild(button('Odstrániť účet', 'btn-danger', function(){
+    var answer = prompt('Odstránenie sa nedá vrátiť. Pre potvrdenie napíš ODSTRANIT');
+    if (answer === null) return;
+    if (answer.trim().toUpperCase() !== 'ODSTRANIT') { status('Účet nebol odstránený, potvrdenie nesedí.', 'err'); return; }
+    call('deleteAccount', [], function(url){
+      view.innerHTML = '';
+      var bye = card('Účet bol odstránený');
+      bye.appendChild(el('p', 'note', 'Tvoje údaje v aplikácii sú zmazané. Ďakujeme, že si GSC Fetch vyskúšal.'));
+      var next = el('a', '', 'Pokračovať →');
+      next.href = url; next.target = '_top';
+      bye.appendChild(next);
+      view.appendChild(bye);
+      document.getElementById('view-tables').classList.add('hidden');
+      status('Účet odstránený.', 'ok');
+    });
+  }));
+  danger.appendChild(dangerRow);
+  view.appendChild(danger);
+}
+
+// Zmena plánu: výber plánu a obdobia, potvrdenie.
+function renderPlanChange(box, d){
+  box.innerHTML = '';
+  var s = d.subscription;
+  var period = s.period || 'monthly';
+  var plan = s.plan;
+  var seg = el('div', 'seg');
+  var pick = el('div', 'pick');
+  function monthly(p){ return period === 'yearly' ? p.priceYearly / 12 : p.priceMonthly; }
+  function paint(){
+    seg.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-p') === period); });
+    pick.innerHTML = '';
+    d.plans.forEach(function(p){
+      var label = el('label', p.key === plan ? 'on' : '');
+      var r = el('input'); r.type = 'radio'; r.name = 'chg-plan'; r.checked = p.key === plan;
+      r.onchange = function(){ plan = p.key; paint(); };
+      label.appendChild(r);
+      var txt = el('span');
+      txt.appendChild(el('b', '', p.name + (p.key === s.plan && period === s.period ? ' (aktuálny)' : '')));
+      txt.appendChild(el('br'));
+      txt.appendChild(el('small', '', p.desc));
+      label.appendChild(txt);
+      label.appendChild(el('span', 'pp', eur(monthly(p)) + ' / mes.'));
+      pick.appendChild(label);
+    });
+  }
+  [['monthly', 'Mesačne'], ['yearly', 'Ročne · 2 mesiace zadarmo']].forEach(function(o){
+    var b = button(o[1], '', function(){ period = o[0]; paint(); });
+    b.setAttribute('data-p', o[0]);
+    seg.appendChild(b);
+  });
+  box.appendChild(seg);
+  box.appendChild(pick);
+  box.appendChild(el('p', 'note', 'Zmena platí hneď a nové obdobie začína dnes. Ceny: ' + d.plans.map(function(p){
+    return p.name + ' ' + eur(p.priceMonthly) + ' / mesiac alebo ' + eur(p.priceYearly) + ' / rok';
+  }).join(', ') + '.'));
+  var row = el('div', 'actions');
+  row.appendChild(button('Potvrdiť zmenu', 'primary', function(){
+    call('changePlan', [plan, period], function(r){ afterAccountChange(r, 'Plán zmenený.'); });
+  }));
+  row.appendChild(button('Zavrieť', '', function(){ box.classList.add('hidden'); }));
+  box.appendChild(row);
+  paint();
+}
+function render(state){
+  if (state.account) { ACCOUNT = state.account; renderAccount(); }
+  var list = document.getElementById('list');
+  list.innerHTML = '';
+  document.getElementById('empty').style.display = state.targets.length ? 'none' : 'block';
+  document.getElementById('limit-info').textContent = !ACCOUNT ? '' :
+    ACCOUNT.maxTargets === null ? 'Plán ' + ACCOUNT.planName + ' · neobmedzene tabuliek'
+      : 'Plán ' + ACCOUNT.planName + ' · ' + state.targets.length + ' / ' + ACCOUNT.maxTargets + ' tabuliek';
+  var autoAllowed = !ACCOUNT || ACCOUNT.auto;
+  state.targets.forEach(function(t, i){
+    var box = el('div', 'target');
+    var top = el('div', 'target-top');
+    var info = el('div');
+    var link = el('a', '', t.name);
+    link.href = t.sheetUrl; link.target = '_blank';
+    info.appendChild(link);
+    info.appendChild(el('br'));
+    info.appendChild(el('span', 'chip', t.siteUrl));
+    var fl = filterLabel(t);
+    if (fl) info.appendChild(el('span', 'chip filter', fl));
+    top.appendChild(info);
+
+    var sw = el('label', 'switch' + (autoAllowed ? '' : ' disabled'));
+    var cb = el('input');
+    cb.type = 'checkbox'; cb.checked = t.auto && autoAllowed;
+    cb.onchange = function(){
+      if (!autoAllowed) { cb.checked = false; status('Auto-fetch je dostupný od plánu Pro.', 'err'); return; }
+      call('setWebTargetAuto', [i, cb.checked], function(s){
+        render(s);
+        status((cb.checked ? 'Auto-fetch zapnutý: ' : 'Auto-fetch vypnutý: ') + t.name, 'ok');
+      });
+    };
+    sw.appendChild(cb);
+    sw.appendChild(el('span', 'slider'));
+    sw.appendChild(document.createTextNode('Auto-fetch pozícií'));
+    if (!autoAllowed) sw.appendChild(el('span', 'lock-tag', 'Pro'));
+    top.appendChild(sw);
+    box.appendChild(top);
+
+    var settings = el('div', 'settings');
+    var days = numberInput(t.daysBack || 30, 1, 480);
+    var rows = numberInput(t.rowLimit || 25000, 1, ACCOUNT ? ACCOUNT.maxRows : 1000000);
+    var mode = el('select');
+    LANG_MODES.forEach(function(m){
+      var opt = el('option', '', m[1]);
+      opt.value = m[0];
+      mode.appendChild(opt);
+    });
+    mode.value = t.langMode || 'all';
+    var codes = el('input');
+    codes.type = 'text'; codes.placeholder = 'hu, pl, de'; codes.value = (t.langCodes || []).join(', ');
+    var codesWrap = field('Kódy verzií', codes);
+    codesWrap.style.visibility = needsCodes(mode.value) ? 'visible' : 'hidden';
+    function save(){
+      call('setWebTargetSettings', [i, {
+        daysBack: days.value, rowLimit: rows.value, langMode: mode.value, langCodes: codes.value
+      }], function(s){
+        render(s);
+        status('Nastavenia uložené: ' + t.name, 'ok');
+      });
+    }
+    days.onchange = save;
+    rows.onchange = save;
+    codes.onchange = save;
+    mode.onchange = function(){
+      codesWrap.style.visibility = needsCodes(mode.value) ? 'visible' : 'hidden';
+      if (needsCodes(mode.value) && !codes.value.trim()) {
+        status('Zadaj kódy verzií, napríklad hu, pl, de.', '');
+        codes.focus();
+        return;
+      }
+      save();
+    };
+    settings.appendChild(field('Dni (queries)', days));
+    settings.appendChild(field('Max riadkov', rows));
+    settings.appendChild(field('Jazykové verzie', mode));
+    settings.appendChild(codesWrap);
+    box.appendChild(settings);
+
+    function run(action){
+      return function(){
+        call('runWebTarget', [i, action], function(log){
+          status(log || 'Hotovo.', /CHYBA/.test(log || '') ? 'err' : 'ok');
+        }, 'Načítavam ' + t.name + '… môže to trvať aj minútu.');
+      };
+    }
+    var actions = el('div', 'actions');
+    actions.appendChild(button('▶ Pozície', 'primary', run('positions')));
+    actions.appendChild(button('Všetky queries', '', run('allQueries')));
+    actions.appendChild(button('Queries + URL', '', run('queriesUrl')));
+    actions.appendChild(button('Odstrániť', 'danger', function(){
+      if (confirm('Odstrániť ' + t.name + ' zo zoznamu? Tabuľka sa nezmaže.')) {
+        call('removeWebTarget', [i], function(s){ render(s); status('Odstránené: ' + t.name, 'ok'); });
+      }
+    }));
+    box.appendChild(actions);
+    list.appendChild(box);
+  });
+}
+function add(){
+  call('addWebTarget', [val('sheet'), val('site'), val('days')], function(s){
+    render(s);
+    document.getElementById('sheet').value = '';
+    document.getElementById('site').value = '';
+    status('Tabuľka pridaná. Nastav filter a limit riadkov, potom spusti fetch.', 'ok');
+  });
+}
+function fillSites(sites){
+  var select = document.getElementById('site');
+  select.innerHTML = '';
+  var first = document.createElement('option');
+  first.value = '';
+  first.textContent = sites.length ? '— vyber web —' : 'V GSC nemáš žiadny overený web';
+  select.appendChild(first);
+  sites.forEach(function(site){
+    var opt = document.createElement('option');
+    opt.value = site; opt.textContent = site;
+    select.appendChild(opt);
+  });
+}
+call('getWebState', [], function(s){
+  render(s);
+  call('listGscSites', [], function(sites){ fillSites(sites); status('Pripravené.', ''); }, 'Načítavam weby z GSC…');
+}, 'Načítavam…');
+</script><a href="../index.html" style="position:fixed;left:16px;bottom:16px;z-index:60;font:12px Inter,system-ui,sans-serif;color:#fcd34d;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);padding:5px 10px;border-radius:8px;text-decoration:none">Lokálne demo · ← landing page</a>
+</body></html>

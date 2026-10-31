@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<title>GSC Fetch</title>
+<script src="mock-gas.js"></script>
+<script>
+// Rozcestník lokálneho dema – rovnaké rozhodnutie ako doGet() vo Web.gs:
+// neprihlásený → prihlásenie, bez predplatného → paywall, s predplatným → aplikácia.
+var s = GSC_DEMO.status();
+var target = !s.loggedIn ? 'login.html' : (s.active ? 'webapp.html' : 'paywall.html');
+location.replace(target + location.search);
+</script>
+</head>
+<body style="background:#0a1020"></body>
+</html>

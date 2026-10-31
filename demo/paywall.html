@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="sk"><head><base target="_top"><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a1020; --panel:#111a2e; --panel-2:#16213a; --border:#22304f;
+    --text:#e6ebf5; --muted:#8a97b4; --accent:#3b82f6; --accent-2:#60a5fa;
+    --ok:#22c55e; --err:#f87171; --warn:#fcd34d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--text);font:15px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    background:var(--bg) radial-gradient(1200px 500px at 0% -10%,#1b2b55 0%,transparent 60%) no-repeat}
+  a{color:var(--accent-2);text-decoration:none}
+  .hidden{display:none !important}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 20px 80px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+  .logo{flex:none;width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#1e40af);display:grid;place-items:center;font-weight:700;font-size:18px;color:#fff;box-shadow:0 8px 24px rgba(59,130,246,.35)}
+  h1{font-size:22px;font-weight:600;margin:0}
+  .who{margin-left:auto;text-align:right;font-size:13px;color:var(--muted)}
+  .who b{display:block;color:var(--text);font-weight:500}
+  .who a{display:block}
+  .steps{display:flex;gap:8px;justify-content:center;margin-bottom:26px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+  .steps span{padding:4px 12px;border-radius:999px;border:1px solid var(--border)}
+  .steps span.on{background:rgba(59,130,246,.14);border-color:transparent;color:var(--accent-2)}
+  .steps span.done{color:#86efac;border-color:rgba(34,197,94,.3)}
+  .intro{text-align:center;max-width:620px;margin:0 auto 22px}
+  .eyebrow{display:inline-block;padding:5px 12px;border-radius:999px;background:rgba(59,130,246,.12);color:var(--accent-2);font-size:13px;font-weight:500}
+  .intro h2{font-size:30px;margin:12px 0 8px;letter-spacing:-.01em}
+  .intro p{color:var(--muted);margin:0}
+  .toggle{display:inline-flex;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:4px;gap:4px}
+  .toggle button{height:34px;padding:0 14px;border:none;border-radius:9px;background:transparent;color:var(--muted);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+  .toggle button.on{background:var(--panel-2);color:var(--text)}
+  .billing{display:flex;justify-content:center;margin:18px 0 24px}
+  .save{font-size:11px;background:rgba(34,197,94,.15);color:#86efac;padding:2px 6px;border-radius:6px}
+  .plans{display:grid;grid-template-columns:repeat(2,minmax(0,380px));justify-content:center;gap:16px}
+  @media (max-width:860px){.plans{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px}
+  .plan{display:flex;flex-direction:column;position:relative}
+  .plan.featured{border:2px solid var(--accent)}
+  .badge{position:absolute;top:-12px;left:22px;background:var(--accent);color:#fff;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+  .plan h3{margin:0;font-size:18px}
+  .price{font-size:36px;font-weight:700;letter-spacing:-.02em;margin-top:10px;line-height:1.1}
+  .price small{font-size:14px;color:var(--muted);font-weight:400}
+  .price-note{color:var(--muted);font-size:12px;min-height:18px;margin-top:4px}
+  .plan ul{list-style:none;padding:0;margin:16px 0 20px;flex:1}
+  .plan li{padding:4px 0;font-size:14px}
+  .plan li:before{content:"✓";color:var(--ok);margin-right:8px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 18px;border-radius:12px;border:1px solid var(--border);background:var(--panel-2);color:var(--text);font:inherit;font-weight:500;cursor:pointer}
+  .btn:hover{border-color:var(--accent-2)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{background:#2563eb}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .btn.off{opacity:.5;pointer-events:none}
+  .btn:disabled{opacity:.6;cursor:default}
+  .full{width:100%}
+  .checkout{display:grid;grid-template-columns:1fr 1.15fr;gap:18px;align-items:start}
+  @media (max-width:860px){.checkout{grid-template-columns:1fr}}
+  .checkout h2{font-size:20px;margin:0 0 4px}
+  .muted{color:var(--muted)}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .pick{display:grid;gap:8px;margin:16px 0}
+  .pick label{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;cursor:pointer;background:var(--panel-2)}
+  .pick label.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.2)}
+  .pick input{accent-color:var(--accent)}
+  .pick .pp{margin-left:auto;font-weight:600;white-space:nowrap}
+  .pick .muted{font-size:13px}
+  .plan .desc{color:var(--muted);font-size:14px;margin:2px 0 0}
+  .line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:14px}
+  .line.total{font-weight:700;font-size:17px;border-bottom:none}
+  .up{color:#86efac}
+  .test-banner{display:flex;gap:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 6px}
+  .section-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin:18px 0 8px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+  @media (max-width:520px){.row2,.row3{grid-template-columns:1fr}}
+  label.field{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px}
+  input[type=text],input[type=email],select{width:100%;height:44px;padding:0 12px;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;color:var(--text);font:inherit;outline:none;transition:border-color .15s,box-shadow .15s}
+  input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.25)}
+  input[readonly]{opacity:.7}
+  input.bad{border-color:var(--err)}
+  select option{background:var(--panel-2)}
+  .err{color:var(--err);font-size:13px;min-height:20px;margin:12px 0 8px}
+  .fill{font-size:13px;background:none;border:none;color:var(--accent-2);cursor:pointer;padding:0;font:inherit;font-size:13px}
+  .spin{width:16px;height:16px;border:2px solid #fff;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .success{max-width:480px;margin:0 auto;text-align:center}
+  .check{width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,.15);color:var(--ok);display:grid;place-items:center;font-size:30px;margin:0 auto 16px}
+  .success h2{margin:0 0 6px;font-size:24px}
+  .receipt{text-align:left;margin:18px 0 20px}
+  .after{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 22px;margin-top:22px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .after p{margin:0;color:var(--muted);font-size:14px;flex:1;min-width:240px}
+  .after b{color:var(--text);font-weight:500}
+  #msg{font-size:13px;margin-top:10px;min-height:20px;text-align:center}
+  #msg.ok{color:#86efac} #msg.err{color:var(--err)}
+  .foot{text-align:center;color:var(--muted);font-size:13px;margin-top:24px}
+  .lt-banner{display:flex;gap:16px;align-items:center;flex-wrap:wrap;max-width:776px;margin:0 auto 22px;padding:18px 22px;border-radius:16px;
+    background:linear-gradient(135deg,rgba(59,130,246,.18),rgba(167,139,250,.18));border:1px solid rgba(96,165,250,.5)}
+  .lt-banner h3{margin:4px 0 2px;font-size:18px}
+  .lt-meta{color:var(--muted);font-size:13px}
+  .lt-timer{color:var(--warn);font-weight:600}
+  .lt-right{margin-left:auto;text-align:right}
+  .lt-price{font-size:28px;font-weight:700;line-height:1.1}
+  .lt-price small{font-size:13px;color:var(--muted);font-weight:400}
+  .lt-right .btn{margin-top:8px}
+  .lt-info{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:13px;margin:12px 0 0}
+</style><title>GSC Fetch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="mock-gas.js"></script>
+</head><body><div class="wrap">
+<header>
+  <div class="logo">G</div>
+  <h1>GSC Fetch</h1>
+  <div class="who" id="who">Načítavam…</div>
+</header>
+
+<div class="steps"><span id="st1" class="on">1. Plán</span><span id="st2">2. Platba</span><span id="st3">3. Hotovo</span></div>
+
+<!-- KROK 1: výber plánu -->
+<div id="step-plans">
+  <div class="intro">
+    <span class="eyebrow">Posledný krok</span>
+    <h2>Vyber si plán a odomkni aplikáciu</h2>
+    <p>Predplatné môžeš kedykoľvek zrušiť.</p>
+  </div>
+  <div class="billing"><div class="toggle period-toggle">
+    <button data-period="monthly" class="on">Mesačne</button>
+    <button data-period="yearly">Ročne <span class="save">2 mesiace zadarmo</span></button>
+  </div></div>
+  <div class="lt-banner hidden" id="lt-banner"></div>
+  <div class="plans" id="plans"></div>
+  <div class="after hidden" id="stripe-after">
+    <p><b>Už si zaplatil?</b> Platobná brána sa otvorí v novej karte. Po zaplatení sa vráť sem a over prístup.</p>
+    <button class="btn primary" id="recheck">Overiť platbu</button>
+  </div>
+  <div id="msg"></div>
+</div>
+
+<!-- KROK 2: košík a platobné údaje -->
+<div id="step-checkout" class="hidden">
+  <div class="checkout">
+    <div class="card">
+      <h2>Tvoja objednávka</h2>
+      <p class="sub">Plán môžeš ešte zmeniť.</p>
+      <div class="toggle period-toggle">
+        <button data-period="monthly" class="on">Mesačne</button>
+        <button data-period="yearly">Ročne <span class="save">2 mesiace zadarmo</span></button>
+        <button data-period="lifetime" class="hidden" id="lt-toggle">Lifetime</button>
+      </div>
+      <div class="pick" id="pick"></div>
+      <div id="lines"></div>
+      <p class="muted" style="font-size:12px;margin:6px 0 0" id="cart-note">Cena vrátane DPH. Predplatné sa obnovuje automaticky, zrušíš ho kedykoľvek.</p>
+      <button class="btn ghost" id="back" style="margin-top:12px;padding:0">← Späť na plány</button>
+    </div>
+    <form class="card" id="pay-form" novalidate>
+      <h2>Fakturačné a platobné údaje</h2>
+      <p class="sub">Účet: <span id="acc-email"></span></p>
+      <div class="test-banner"><span>⚠</span><span><b>Testovací režim.</b> Nič sa neúčtuje a kartové údaje sa nikam neposielajú ani neukladajú. Použi fiktívnu kartu, napríklad 4242 4242 4242 4242. Nezadávaj skutočnú kartu.</span></div>
+      <button type="button" class="fill" id="fill">Vyplniť testovacie údaje</button>
+
+      <div class="section-title">Fakturácia</div>
+      <label class="field" for="b-name">Meno a priezvisko</label>
+      <input type="text" id="b-name" autocomplete="name">
+      <div class="row2">
+        <div><label class="field" for="b-company">Firma (nepovinné)</label><input type="text" id="b-company" autocomplete="organization"></div>
+        <div><label class="field" for="b-vat">IČ DPH (nepovinné)</label><input type="text" id="b-vat" placeholder="SK2020123456"></div>
+      </div>
+      <label class="field" for="b-address">Adresa (nepovinné)</label>
+      <input type="text" id="b-address" autocomplete="street-address" placeholder="Ulica, mesto, PSČ">
+      <label class="field" for="b-country">Krajina</label>
+      <select id="b-country"><option>Slovensko</option><option>Česko</option><option>Maďarsko</option><option>Poľsko</option><option>Rakúsko</option><option>Nemecko</option><option>Iná krajina EÚ</option></select>
+
+      <div class="section-title">Karta</div>
+      <label class="field" for="c-number">Číslo karty</label>
+      <input type="text" id="c-number" inputmode="numeric" autocomplete="off" placeholder="4242 4242 4242 4242" maxlength="23">
+      <div class="row3">
+        <div><label class="field" for="c-holder">Meno na karte</label><input type="text" id="c-holder" autocomplete="off"></div>
+        <div><label class="field" for="c-exp">Platnosť</label><input type="text" id="c-exp" inputmode="numeric" autocomplete="off" placeholder="MM/RR" maxlength="5"></div>
+        <div><label class="field" for="c-cvc">CVC</label><input type="text" id="c-cvc" inputmode="numeric" autocomplete="off" placeholder="123" maxlength="4"></div>
+      </div>
+      <div class="err" id="pay-err"></div>
+      <button type="submit" class="btn primary full" id="pay-btn">Zaplatiť</button>
+      <p class="muted" style="font-size:12px;text-align:center;margin:10px 0 0">Kliknutím súhlasíš s obchodnými podmienkami.</p>
+    </form>
+  </div>
+</div>
+
+<!-- KROK 3: potvrdenie -->
+<div id="step-done" class="hidden">
+  <div class="card success">
+    <div class="check">✓</div>
+    <h2>Platba prijatá</h2>
+    <p class="muted" style="margin:0">Predplatné je aktívne a aplikácia je odomknutá.</p>
+    <div class="receipt" id="receipt"></div>
+    <a class="btn primary full" id="open-app">Otvoriť aplikáciu</a>
+  </div>
+</div>
+
+<p class="foot" id="foot"></p>
+</div>
+<script>
+var START = (function(){var q=new URLSearchParams(location.search);var p=q.get('plan');return {plan:['starter','pro'].indexOf(p)>=0?p:'',period:['yearly','lifetime'].indexOf(q.get('period'))>=0?q.get('period'):'monthly'};})();
+var INFO = null;
+var period = START.period || 'monthly';
+var plan = START.plan || 'pro';
+function $(id){ return document.getElementById(id); }
+function el(tag, cls, text){ var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+function eur(n){ return (Math.round(n * 100) / 100).toFixed(2).replace('.', ',') + ' €'; }
+function short(n){ return eur(n).replace(',00', ''); }
+function fmtDate(ts){ var d = new Date(ts); return d.getDate() + '. ' + (d.getMonth() + 1) + '. ' + d.getFullYear(); }
+function planBy(key){ return INFO.plans.filter(function(p){ return p.key === key; })[0]; }
+// Pri ročnej platbe ukazujeme mesačný ekvivalent pevnej ročnej ceny.
+function monthly(p){ return period === 'yearly' ? p.priceYearly / 12 : p.priceMonthly; }
+function total(p){
+  if (period === 'lifetime') return INFO.lifetime.price;
+  return period === 'yearly' ? p.priceYearly : p.priceMonthly;
+}
+function lifetimeActive(){ return !!(INFO && INFO.lifetime && INFO.lifetime.active); }
+// Odpočet do konca zakladateľskej ponuky.
+function timeLeft(ts){
+  var ms = ts - Date.now();
+  if (ms <= 0) return 'ponuka skončila';
+  var d = Math.floor(ms / 86400000), h = Math.floor(ms % 86400000 / 3600000), m = Math.floor(ms % 3600000 / 60000);
+  return (d ? d + ' d ' : '') + h + ' h ' + m + ' min';
+}
+function renderLifetime(){
+  var box = $('lt-banner');
+  box.innerHTML = '';
+  box.classList.toggle('hidden', !lifetimeActive());
+  $('lt-toggle').classList.toggle('hidden', !lifetimeActive() || !INFO.demoPayments);
+  if (!lifetimeActive()) return;
+  var lt = INFO.lifetime;
+  var left = el('div');
+  left.appendChild(el('span', 'eyebrow', 'Zakladateľská ponuka'));
+  left.appendChild(el('h3', '', lt.planName + ' Lifetime – zaplatíš raz, máš navždy'));
+  var meta = el('div', 'lt-meta', 'Končí o ');
+  meta.appendChild(el('span', 'lt-timer', timeLeft(lt.endsAt)));
+  meta.appendChild(document.createTextNode(' · ostáva ' + lt.remaining + ' z ' + lt.maxSeats + ' licencií'));
+  left.appendChild(meta);
+  box.appendChild(left);
+  var right = el('div', 'lt-right');
+  var price = el('div', 'lt-price', short(lt.price) + ' ');
+  price.appendChild(el('small', '', 'jednorazovo'));
+  right.appendChild(price);
+  if (INFO.demoPayments) {
+    var b = el('button', 'btn primary', 'Chcem Lifetime');
+    b.onclick = function(){ period = 'lifetime'; plan = lt.plan; syncPeriodButtons(); openCheckout(); };
+    right.appendChild(b);
+  } else {
+    var a = el('a', 'btn primary' + (lt.link ? '' : ' off'), lt.link ? 'Chcem Lifetime' : 'Čoskoro');
+    if (lt.link) { a.href = lt.link; a.target = '_blank'; a.rel = 'noopener'; }
+    right.appendChild(a);
+  }
+  box.appendChild(right);
+}
+function msg(text, kind){ $('msg').textContent = text; $('msg').className = kind || ''; }
+function step(n){
+  $('step-plans').classList.toggle('hidden', n !== 1);
+  $('step-checkout').classList.toggle('hidden', n !== 2);
+  $('step-done').classList.toggle('hidden', n !== 3);
+  ['st1', 'st2', 'st3'].forEach(function(id, i){
+    $(id).className = i + 1 === n ? 'on' : (i + 1 < n ? 'done' : '');
+  });
+  window.scrollTo(0, 0);
+}
+function syncPeriodButtons(){
+  document.querySelectorAll('[data-period]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-period') === period); });
+}
+
+// ---------- krok 1 ----------
+function renderPlans(){
+  var box = $('plans');
+  box.innerHTML = '';
+  INFO.plans.forEach(function(p){
+    var card = el('div', 'card plan' + (p.featured ? ' featured' : ''));
+    if (p.featured) card.appendChild(el('span', 'badge', 'Najobľúbenejší'));
+    card.appendChild(el('h3', '', p.name));
+    if (p.desc) card.appendChild(el('p', 'desc', p.desc));
+    var price = el('div', 'price', short(monthly(p)) + ' ');
+    price.appendChild(el('small', '', '/ mesiac'));
+    card.appendChild(price);
+    card.appendChild(el('div', 'price-note', period === 'yearly' ? 'ročne ' + short(total(p)) : 'platba mesačne'));
+    var ul = el('ul');
+    p.features.forEach(function(f){ ul.appendChild(el('li', '', f)); });
+    card.appendChild(ul);
+    var cls = 'btn full' + (p.featured ? ' primary' : '');
+    if (INFO.demoPayments) {
+      var b = el('button', cls, 'Vybrať ' + p.name);
+      b.onclick = function(){ plan = p.key; openCheckout(); };
+      card.appendChild(b);
+    } else {
+      var link = p.links[period];
+      var a = el('a', cls + (link ? '' : ' off'), link ? 'Predplatiť ' + p.name : 'Čoskoro');
+      if (link) { a.href = link; a.target = '_blank'; a.rel = 'noopener'; }
+      card.appendChild(a);
+    }
+    box.appendChild(card);
+  });
+}
+
+// ---------- krok 2 ----------
+function openCheckout(){
+  if (period === 'lifetime') {
+    if (lifetimeActive()) { plan = INFO.lifetime.plan; } else { period = 'monthly'; syncPeriodButtons(); }
+  }
+  if (!planBy(plan)) plan = 'pro';
+  renderCart();
+  step(2);
+}
+// Košík pre zakladateľskú lifetime ponuku: jeden plán, jednorazová platba.
+function renderLifetimeCart(){
+  var lt = INFO.lifetime;
+  var p = planBy(lt.plan);
+  var pick = $('pick');
+  pick.innerHTML = '';
+  var label = el('label', 'on');
+  var radio = el('input');
+  radio.type = 'radio'; radio.name = 'plan'; radio.checked = true;
+  label.appendChild(radio);
+  var name = el('span');
+  name.appendChild(el('b', '', p.name + ' Lifetime'));
+  name.appendChild(el('br'));
+  name.appendChild(el('span', 'muted', 'Všetko z ' + p.name + ' navždy, bez ďalších platieb'));
+  label.appendChild(name);
+  label.appendChild(el('span', 'pp', eur(lt.price) + ' raz'));
+  pick.appendChild(label);
+  var lines = $('lines');
+  lines.innerHTML = '';
+  [[p.name + ' Lifetime · jednorazová platba', eur(lt.price), ''],
+   ['Pre porovnanie: ' + p.name + ' ročne', eur(p.priceYearly) + ' každý rok', ''],
+   ['Spolu dnes', eur(lt.price), 'total']].forEach(function(r){
+    var row = el('div', 'line' + (r[2] ? ' ' + r[2] : ''));
+    row.appendChild(el('span', '', r[0]));
+    row.appendChild(el('span', '', r[1]));
+    lines.appendChild(row);
+  });
+  lines.appendChild(el('div', 'lt-info', 'Zakladateľská ponuka končí o ' + timeLeft(lt.endsAt) + ' · ostáva ' + lt.remaining + ' z ' + lt.maxSeats + ' licencií.'));
+  $('cart-note').textContent = 'Cena vrátane DPH. Jednorazová platba, nič sa neobnovuje ani neúčtuje znova.';
+  $('pay-btn').textContent = 'Zaplatiť ' + eur(lt.price);
+}
+function renderCart(){
+  if (period === 'lifetime' && lifetimeActive()) { renderLifetimeCart(); return; }
+  $('cart-note').textContent = 'Cena vrátane DPH. Predplatné sa obnovuje automaticky, zrušíš ho kedykoľvek.';
+  var pick = $('pick');
+  pick.innerHTML = '';
+  INFO.plans.forEach(function(p){
+    var label = el('label', p.key === plan ? 'on' : '');
+    var radio = el('input');
+    radio.type = 'radio'; radio.name = 'plan'; radio.value = p.key; radio.checked = p.key === plan;
+    radio.onchange = function(){ plan = p.key; renderCart(); };
+    label.appendChild(radio);
+    var name = el('span');
+    name.appendChild(el('b', '', p.name));
+    if (p.desc) { name.appendChild(el('br')); name.appendChild(el('span', 'muted', p.desc)); }
+    label.appendChild(name);
+    label.appendChild(el('span', 'pp', eur(monthly(p)) + ' / mes.'));
+    pick.appendChild(label);
+  });
+  var p = planBy(plan);
+  var full = period === 'yearly' ? p.priceMonthly * 12 : p.priceMonthly;
+  var lines = $('lines');
+  lines.innerHTML = '';
+  function line(label, value, cls){
+    var row = el('div', 'line' + (cls ? ' ' + cls : ''));
+    row.appendChild(el('span', '', label));
+    row.appendChild(el('span', cls === 'discount' ? 'up' : '', value));
+    lines.appendChild(row);
+  }
+  line(p.name + ' · ' + (period === 'yearly' ? 'ročne (12 mesiacov)' : 'mesačne'), eur(full));
+  if (period === 'yearly') line('Zľava za ročnú platbu', '−' + eur(full - total(p)), 'discount');
+  line('Spolu dnes', eur(total(p)), 'total');
+  $('pay-btn').textContent = 'Zaplatiť ' + eur(total(p));
+}
+
+// Kontrola fiktívnej karty – len formát a Luhnov súčet, nič sa neodosiela.
+function digits(v){ return String(v).replace(/[^0-9]/g, ''); }
+function luhn(num){
+  var sum = 0, dbl = false;
+  for (var i = num.length - 1; i >= 0; i--) {
+    var d = parseInt(num.charAt(i), 10);
+    if (dbl) { d *= 2; if (d > 9) d -= 9; }
+    sum += d; dbl = !dbl;
+  }
+  return sum % 10 === 0;
+}
+function validExpiry(v){
+  var m = /^([0-9]{2})[/]([0-9]{2})$/.exec(v);
+  if (!m) return false;
+  var month = parseInt(m[1], 10), year = 2000 + parseInt(m[2], 10);
+  if (month < 1 || month > 12) return false;
+  var now = new Date();
+  return year > now.getFullYear() || (year === now.getFullYear() && month >= now.getMonth() + 1);
+}
+function fail(input, text){
+  input.classList.add('bad');
+  input.focus();
+  $('pay-err').textContent = text;
+  return false;
+}
+function validate(){
+  document.querySelectorAll('#pay-form input').forEach(function(i){ i.classList.remove('bad'); });
+  if ($('b-name').value.trim().length < 3) return fail($('b-name'), 'Zadaj meno a priezvisko.');
+  var num = digits($('c-number').value);
+  if (num.length < 13 || num.length > 19 || !luhn(num)) return fail($('c-number'), 'Číslo karty nie je platné. V testovacom režime použi 4242 4242 4242 4242.');
+  if ($('c-holder').value.trim().length < 3) return fail($('c-holder'), 'Zadaj meno na karte.');
+  if (!validExpiry($('c-exp').value.trim())) return fail($('c-exp'), 'Platnosť zadaj v tvare MM/RR a nesmie byť v minulosti.');
+  if (!/^[0-9]{3,4}$/.test($('c-cvc').value.trim())) return fail($('c-cvc'), 'CVC má 3 alebo 4 číslice.');
+  $('pay-err').textContent = '';
+  return true;
+}
+$('c-number').oninput = function(){ this.value = digits(this.value).slice(0, 19).replace(/(.{4})/g, '$1 ').trim(); };
+$('c-exp').oninput = function(){ var d = digits(this.value).slice(0, 4); this.value = d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; };
+$('c-cvc').oninput = function(){ this.value = digits(this.value).slice(0, 4); };
+document.querySelectorAll('#pay-form input').forEach(function(i){
+  i.addEventListener('input', function(){ i.classList.remove('bad'); $('pay-err').textContent = ''; });
+});
+$('fill').onclick = function(){
+  var exp = new Date(); exp.setFullYear(exp.getFullYear() + 2);
+  $('b-name').value = $('b-name').value || 'Testovací Zákazník';
+  $('c-number').value = '4242 4242 4242 4242';
+  $('c-holder').value = $('b-name').value;
+  $('c-exp').value = ('0' + (exp.getMonth() + 1)).slice(-2) + '/' + String(exp.getFullYear()).slice(-2);
+  $('c-cvc').value = '123';
+  $('pay-err').textContent = '';
+};
+$('back').onclick = function(){
+  if (period === 'lifetime') { period = 'monthly'; syncPeriodButtons(); }
+  renderPlans();
+  step(1);
+};
+$('pay-form').onsubmit = function(e){
+  e.preventDefault();
+  if (!validate()) return;
+  var btn = $('pay-btn');
+  var label = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Spracovávam platbu…';
+  // Na server ide len plán a fakturačné meno, nikdy nie údaje z karty.
+  google.script.run
+    .withSuccessHandler(function(res){
+      btn.disabled = false; btn.textContent = label;
+      var r = $('receipt');
+      r.innerHTML = '';
+      var lifetime = res.period === 'lifetime';
+      [['Plán', res.planName + (lifetime ? ' · Lifetime' : res.period === 'yearly' ? ' · ročne' : ' · mesačne')],
+       ['Zaplatené (test)', eur(res.amount)],
+       ['Ďalšia platba', lifetime ? 'žiadna, licencia platí navždy' : fmtDate(res.until)],
+       ['Účet', INFO.email]].forEach(function(row){
+        var line = el('div', 'line');
+        line.appendChild(el('span', 'muted', row[0]));
+        line.appendChild(el('span', '', row[1]));
+        r.appendChild(line);
+      });
+      $('open-app').href = res.appUrl;
+      step(3);
+    })
+    .withFailureHandler(function(err){
+      btn.disabled = false; btn.textContent = label;
+      $('pay-err').textContent = 'Platba neprešla: ' + err.message;
+    })
+    .simulatePayment(plan, period, {
+      name: $('b-name').value.trim(), company: $('b-company').value.trim(), vat: $('b-vat').value.trim(),
+      address: $('b-address').value.trim(), country: $('b-country').value
+    });
+};
+
+// ---------- spoločné ----------
+document.querySelectorAll('[data-period]').forEach(function(b){
+  b.onclick = function(){
+    period = b.getAttribute('data-period');
+    syncPeriodButtons();
+    if (!INFO) return;
+    renderPlans();
+    if (!$('step-checkout').classList.contains('hidden')) renderCart();
+  };
+});
+$('recheck').onclick = function(){
+  var btn = this;
+  btn.disabled = true;
+  msg('Overujem platbu…', '');
+  google.script.run
+    .withSuccessHandler(function(ok){
+      btn.disabled = false;
+      if (!ok) { msg('Predplatné zatiaľ nevidíme. Platba sa môže spracúvať pár sekúnd, skús to o chvíľu znova.', 'err'); return; }
+      msg('Predplatné je aktívne.', 'ok');
+      var box = $('stripe-after');
+      box.innerHTML = '';
+      box.appendChild(el('p', '', 'Hotovo, prístup je odomknutý.'));
+      var open = el('a', 'btn primary', 'Otvoriť aplikáciu');
+      open.href = INFO.appUrl; open.target = '_top';
+      box.appendChild(open);
+    })
+    .withFailureHandler(function(err){ btn.disabled = false; msg('CHYBA: ' + err.message, 'err'); })
+    .recheckAccess();
+};
+google.script.run
+  .withSuccessHandler(function(info){
+    INFO = info;
+    var who = $('who');
+    who.textContent = '';
+    who.appendChild(el('b', '', info.email || 'neznámy účet'));
+    var sw = el('a', '', 'Prepnúť účet');
+    sw.href = info.switchAccountUrl; sw.target = '_top';
+    who.appendChild(sw);
+    $('acc-email').textContent = info.email;
+    // Predvyplní fakturačné údaje z minulej platby (napr. po zrušení predplatného).
+    var b = info.billing || {};
+    $('b-name').value = b.name || ''; $('b-company').value = b.company || ''; $('b-vat').value = b.vat || '';
+    $('b-address').value = b.address || '';
+    if (b.country) $('b-country').value = b.country;
+    $('stripe-after').classList.toggle('hidden', info.demoPayments);
+    $('foot').textContent = (info.demoPayments ? 'Testovací režim – platby sú fiktívne. ' :
+      'Pri platbe použi e-mail ' + (info.email || 'svojho Google účtu') + ', inak sa predplatné nespáruje. ') +
+      (info.supportEmail ? 'Otázky: ' + info.supportEmail : '');
+    if (period === 'lifetime' && !(lifetimeActive() && info.demoPayments)) period = 'monthly';
+    syncPeriodButtons();
+    renderLifetime();
+    renderPlans();
+    if ((START.plan || period === 'lifetime') && info.demoPayments) openCheckout();
+    // Odpočet zakladateľskej ponuky sa obnovuje každých 30 sekúnd.
+    setInterval(function(){
+      renderLifetime();
+      if (period === 'lifetime' && !$('step-checkout').classList.contains('hidden')) renderLifetimeCart();
+    }, 30000);
+  })
+  .withFailureHandler(function(err){ msg('CHYBA: ' + err.message, 'err'); })
+  .getPaywallInfo();
+</script><a href="../index.html" style="position:fixed;left:16px;bottom:16px;z-index:60;font:12px Inter,system-ui,sans-serif;color:#fcd34d;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);padding:5px 10px;border-radius:8px;text-decoration:none">Lokálne demo · ← landing page</a>
+</body></html>
